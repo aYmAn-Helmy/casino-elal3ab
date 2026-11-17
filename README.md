@@ -1,0 +1,38 @@
+# Casino El Al3ab 🎮
+
+لعبة جرس ومسابقات جماعية تعمل على شبكة LAN، ومجهزة للاستضافة على **CasaOS / Mini PC**.
+
+> MVP v0.1.0: اللاعبين يفتحوا اللعبة من متصفح الموبايل، المذيع يتحكم في الجولات والنقاط، وكل الضغطات بتتحسم على السيرفر عبر WebSocket. **ملف Android APK غير متوفر حتى الآن.**
+
+## مكونات المشروع
+- Node.js 24 + WebSocket (`ws`) للسيرفر والجرس
+- SQLite لتخزين اللاعبين والنقاط
+- واجهات ويب للاعب والمذيع وشاشة النتائج
+- Docker وDocker Compose للتشغيل على CasaOS
+
+## تشغيل سريع على Mini PC / CasaOS
+
+```bash
+git clone https://github.com/aYmAn-Helmy/casino-elal3ab.git
+cd casino-elal3ab
+cp .env.example .env
+# غيّر ADMIN_PIN إلى سر قوي في ملف .env
+sudo mkdir -p /DATA/AppData/casino-party-lan/{data,apk}
+sudo chown -R 1000:1000 /DATA/AppData/casino-party-lan/data
+docker compose up -d --build
+```
+
+بعد التشغيل: `http://SERVER_IP:3000` ثم `/play` للاعب و`/admin` للمذيع و`/screen` للشاشة.
+
+لظهور التطبيق داخل **CasaOS**، ابنِ الصورة محليًا أولًا ثم استورد `docker-compose.casaos.yml` من Custom Install.
+
+**اقرأ [دليل التثبيت بالعربي](README_AR.md) للمزيد**، و[توثيق البروتوكول](API.md).
+
+## الأمان والتطوير
+- لا ترفع ملف `.env` أو أي مفاتيح خاصة إلى GitHub.
+- غيّر `ADMIN_PIN` النموذجي قبل التشغيل، ولا تعرض المنفذ 3000 على الإنترنت.
+- طريقة احتساب السبق: أول ضغطة صحيحة **تصل للسيرفر** تفوز؛ ليست قياسًا مؤكدًا للحظة الضغط على الأجهزة.
+- تثبيت متطلبات Docker أول مرة يتطلب الإنترنت، لكن اللعب على LAN لا يحتاج الإنترنت.
+
+## الحالة
+✅ MVP ويب / CasaOS | ⏳ Android APK وQR Code وبنك أسئلة لم تُنفذ بعد.
