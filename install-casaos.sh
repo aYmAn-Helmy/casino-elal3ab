@@ -82,17 +82,15 @@ docker compose -f docker-compose.yml up -d --build
 # Optional: download the signed (debug) Android client from the project release.
 # If GitHub is unreachable the web client remains fully playable.
 APK="$DATA_ROOT/apk/casino-elal3ab.apk"
-APK_RELEASE="https://github.com/aYmAn-Helmy/casino-elal3ab/releases/download/v0.1.2/casino-elal3ab.apk"
-if [[ ! -s "$APK" ]]; then
-  tempfile="$(mktemp "$DATA_ROOT/apk/.casino-apk.XXXXXX")"
-  if curl -fLsS --connect-timeout 8 --max-time 90 "$APK_RELEASE" -o "$tempfile" && [[ -s "$tempfile" ]]; then
-    mv -f "$tempfile" "$APK"
-    chmod 644 "$APK"
-    echo "تم تجهيز APK على السيرفر للتحميل من /download"
-  else
-    rm -f "$tempfile"
-    echo "لم نقدر ننزّل APK. افتح /play من متصفح أي موبايل وابدأ اللعب عادي."
-  fi
+APK_RELEASE="https://github.com/aYmAn-Helmy/casino-elal3ab/releases/download/v0.1.3/casino-elal3ab.apk"
+tempfile="$(mktemp "$DATA_ROOT/apk/.casino-apk.XXXXXX")"
+if curl -fLsS --connect-timeout 8 --max-time 90 "$APK_RELEASE" -o "$tempfile" && [[ -s "$tempfile" ]]; then
+  mv -f "$tempfile" "$APK"
+  chmod 644 "$APK"
+  echo "تم تجهيز آخر إصدار APK على السيرفر للتحميل من /download"
+else
+  rm -f "$tempfile"
+  echo "لم نقدر ننزّل APK الأحدث. لو موجود إصدار سابق هيفضل زي ما هو. /play شغال من المتصفح."
 fi
 
 port="$(sed -n 's/^PORT=//p' .env | tail -n1)"

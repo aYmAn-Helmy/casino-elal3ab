@@ -3,7 +3,7 @@ name: casino-party-lan
 services:
   casino-party:
     build: .
-    image: casino-party-lan:0.1.0
+    image: casino-party-lan:0.1.3
     container_name: casino-party-lan
     restart: unless-stopped
     init: true
