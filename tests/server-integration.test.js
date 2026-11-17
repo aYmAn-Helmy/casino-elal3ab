@@ -103,8 +103,8 @@ test('HTTP and real WebSocket player/admin buzzer flow on seeded LAN server', { 
   assert.equal(audioResponse.status, 200, 'player sound file is served over LAN');
   const audioSource = await audioResponse.text();
   assert.match(audioSource, /window\.GameSounds/);
-  assert.match(audioSource, /play\('tap'\)/);
-  assert.match(audioSource, /play\('win'\)/);
+  assert.match(audioSource, /synthesize\('tap'\)/);
+  assert.match(audioSource, /synthesize\('win'\)/);
 
   const bellResponse = await fetch(`http://127.0.0.1:${port}/bell.mp3`);
   assert.equal(bellResponse.status, 200);
