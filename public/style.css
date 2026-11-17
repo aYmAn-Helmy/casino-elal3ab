@@ -5,3 +5,7 @@
 .question-display h2{margin:8px 0;white-space:pre-wrap}
 
 select{width:100%;background:#0c1628;border:1px solid #445c80;color:white;border-radius:12px;padding:13px;font-size:1rem;margin:7px 0 14px}
+
+.center-controls{justify-content:center;margin:8px 0;gap:10px}
+#soundToggle[aria-pressed="false"]{background:#394354;color:#d1d9e6}
+#soundHint{font-size:.82rem;line-height:1.5}
