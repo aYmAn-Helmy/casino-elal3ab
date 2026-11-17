@@ -9,3 +9,15 @@ select{width:100%;background:#0c1628;border:1px solid #445c80;color:white;border
 .center-controls{justify-content:center;margin:8px 0;gap:10px}
 #soundToggle[aria-pressed="false"]{background:#394354;color:#d1d9e6}
 #soundHint{font-size:.82rem;line-height:1.5}
+
+.admin-player-row{flex-wrap:wrap;align-items:center}
+.admin-player-row .player-identity{min-width:125px;flex:2}
+.admin-player-row .player-cards{display:inline-flex;gap:4px}
+.admin-player-row .score{min-width:32px;text-align:center}
+.admin-player-row .card-actions{display:flex;flex-wrap:wrap;gap:6px}
+.card-action{border:0;border-radius:8px;padding:8px 10px;font-weight:800;cursor:pointer;min-height:38px}
+.yellow-card{background:#ffce57;color:#2c2100}
+.red-card{background:#c82f46;color:white}
+.card-action:hover{filter:brightness(1.11)}
+.card-tally{font-size:.72rem;color:var(--muted);margin:0 .3rem;white-space:nowrap}
+.card-count{padding:3px 7px}

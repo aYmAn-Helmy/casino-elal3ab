@@ -82,3 +82,22 @@ When the host sends `{ "type": "host-action", "action": "correct" }` for the pla
 ```
 
 This notification is **not** sent when a buzzer is won (`buzz-result.ok`) or when the host marks an answer wrong; only a correct answer and awarded points should cause the player-side reward chime. The tap bell stays local to the tap gesture. There are no lock sounds.
+
+## Score policy and referee cards — v0.1.3
+
+The default configuration is `CORRECT_POINTS=1`, `WRONG_POINTS=1`.
+Wrong answer subtracts 1 and immediately opens a new buzzer `roundId` for **all connected players**, including the player who was just marked wrong.
+No player is excluded after a wrong answer.
+
+Authenticated host commands:
+
+```json
+{ "type": "host-action", "action": "yellow-card", "playerId": "<player UUID>" }
+```
+```json
+{ "type": "host-action", "action": "red-card", "playerId": "<player UUID>" }
+```
+
+Yellow deducts 1 and increments `players[].yellow_cards`; red deducts 3 and increments `players[].red_cards`. No kick/ban implied. `reset-scores` also clears both card counts.
+
+Optional real bell: `GET /bell.mp3` serves `DATA_DIR/bell.mp3`, or 404 if unavailable; browser falls back to procedural bell.

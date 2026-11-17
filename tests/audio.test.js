@@ -53,13 +53,13 @@ test('tap makes a locally synthesized bell, and a win makes a distinct chime', (
   sounds.tap();
   assert.equal(recordings.created, 1);
   assert.equal(recordings.resumes, 1);
-  assert.equal(recordings.started.length, 2);
+  assert.equal(recordings.started.length, 6);
   const first = recordings.frequencies.map(x => x.f);
   sounds.win();
   assert.equal(recordings.created, 1, 'reuses a single audio context');
-  assert.equal(recordings.started.length, 5);
-  assert.notDeepEqual(recordings.frequencies.slice(2).map(x => x.f), first);
-  assert.equal(recordings.stopped.length, 5);
+  assert.equal(recordings.started.length, 9);
+  assert.notDeepEqual(recordings.frequencies.slice(6).map(x => x.f), first);
+  assert.equal(recordings.stopped.length, 9);
 });
 
 test('mute suppresses both effects and unmute restores sound', () => {
@@ -70,7 +70,7 @@ test('mute suppresses both effects and unmute restores sound', () => {
   assert.equal(recordings.created, 0);
   sounds.setEnabled(true);
   sounds.tap();
-  assert.equal(recordings.started.length, 2);
+  assert.equal(recordings.started.length, 6);
 });
 
 test('missing Web Audio API never breaks buzzer actions', () => {
@@ -90,4 +90,27 @@ test('player UI plays a success chime only after host awards points for a correc
   assert.doesNotMatch(buzzResultBlock, /sounds\.win\(\)/);
 
   assert.doesNotMatch(player, /sounds\.close\(/);
+});
+
+test('real bell recording is preferred when local bell.mp3 is ready', () => {
+  const playback = { plays: 0, pauses: 0 };
+  class RecordedAudio {
+    constructor(src) { assert.equal(src, '/bell.mp3'); this.readyState = 4; }
+    load() {}
+    pause() { playback.pauses++; }
+    play() { playback.plays++; return Promise.resolve(); }
+  }
+  const window = { Audio: RecordedAudio };
+  vm.runInNewContext(source, { window });
+  window.GameSounds.tap();
+  assert.equal(playback.plays, 1);
+  window.GameSounds.setEnabled(false);
+  window.GameSounds.tap();
+  assert.equal(playback.plays, 1);
+});
+
+test('not-yet-downloaded bell falls back to locally synthesized sound', () => {
+  const { sounds, recordings } = simulator();
+  sounds.tap();
+  assert.equal(recordings.started.length, 6);
 });

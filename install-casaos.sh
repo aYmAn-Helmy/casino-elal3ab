@@ -41,8 +41,8 @@ if [[ ! -f .env ]]; then
 ADMIN_PIN=$new_pin
 PORT=3000
 ROOM_NAME=Casino Party LAN
-CORRECT_POINTS=10
-WRONG_POINTS=0
+CORRECT_POINTS=1
+WRONG_POINTS=1
 MAX_PLAYERS=20
 EOF
   chmod 600 .env
@@ -56,23 +56,44 @@ if ! grep -q '^ADMIN_PIN=.' .env; then
 fi
 docker compose -f docker-compose.yml config --quiet
 
+# Download the recorded reception bell once while internet is available.
+# The file stays local under /DATA/AppData and is served on /bell.mp3.
+# Source: Desk Bell Sound by Alexander, Orange Free Sounds, CC BY 4.0.
+# If the source cannot be reached, a synthesized mechanical bell fallback is used.
+BELL_FILE="$DATA_ROOT/data/bell.mp3"
+BELL_SOURCE="https://www.orangefreesounds.com/wp-content/uploads/2015/04/Desk-bell-sound.mp3"
+BELL_RELEASE="https://github.com/aYmAn-Helmy/casino-elal3ab/releases/download/v0.1.3/bell.mp3"
+if [[ ! -s "$BELL_FILE" ]]; then
+  bell_tmp="$(mktemp "$DATA_ROOT/data/.desk-bell.XXXXXX")"
+  # Prefer the license-attributed copy packaged with the APK release.
+  if (curl -fLsS --retry 2 --connect-timeout 8 --max-time 35 "$BELL_RELEASE" -o "$bell_tmp" ||
+      curl -fLsS --retry 2 --connect-timeout 8 --max-time 35 "$BELL_SOURCE" -o "$bell_tmp") &&
+     [[ "$(wc -c < "$bell_tmp")" -gt 1000 ]]; then
+    mv -f "$bell_tmp" "$BELL_FILE"
+    chmod 644 "$BELL_FILE"
+    chown 1000:1000 "$BELL_FILE"
+    echo "تم حفظ تسجيل جرس حقيقي محليًا: $BELL_FILE"
+  else
+    rm -f "$bell_tmp"
+    echo "تعذر تنزيل تسجيل الجرس الحقيقي. الجرس البديل هيشتغل عادي؛ تقدر تحط تسجيلك باسم bell.mp3 في $DATA_ROOT/data"
+  fi
+fi
+
 echo "بنبني صورة Docker وبنشغّل اللعبة..."
 docker compose -f docker-compose.yml up -d --build
 
 # Optional: download the signed (debug) Android client from the project release.
 # If GitHub is unreachable the web client remains fully playable.
 APK="$DATA_ROOT/apk/casino-elal3ab.apk"
-APK_RELEASE="https://github.com/aYmAn-Helmy/casino-elal3ab/releases/download/v0.1.2/casino-elal3ab.apk"
-if [[ ! -s "$APK" ]]; then
-  tempfile="$(mktemp "$DATA_ROOT/apk/.casino-apk.XXXXXX")"
-  if curl -fLsS --connect-timeout 8 --max-time 90 "$APK_RELEASE" -o "$tempfile" && [[ -s "$tempfile" ]]; then
-    mv -f "$tempfile" "$APK"
-    chmod 644 "$APK"
-    echo "تم تجهيز APK على السيرفر للتحميل من /download"
-  else
-    rm -f "$tempfile"
-    echo "لم نقدر ننزّل APK. افتح /play من متصفح أي موبايل وابدأ اللعب عادي."
-  fi
+APK_RELEASE="https://github.com/aYmAn-Helmy/casino-elal3ab/releases/download/v0.1.3/casino-elal3ab.apk"
+tempfile="$(mktemp "$DATA_ROOT/apk/.casino-apk.XXXXXX")"
+if curl -fLsS --connect-timeout 8 --max-time 90 "$APK_RELEASE" -o "$tempfile" && [[ -s "$tempfile" ]]; then
+  mv -f "$tempfile" "$APK"
+  chmod 644 "$APK"
+  echo "تم تجهيز آخر إصدار APK على السيرفر للتحميل من /download"
+else
+  rm -f "$tempfile"
+  echo "لم نقدر ننزّل APK الأحدث. لو موجود إصدار سابق هيفضل زي ما هو. /play شغال من المتصفح."
 fi
 
 port="$(sed -n 's/^PORT=//p' .env | tail -n1)"

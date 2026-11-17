@@ -14,6 +14,6 @@ connectGame({
     $('event').textContent = s.lastEvent;
     $('questionCategory').textContent = s.question?.category || 'السؤال';
     $('questionText').textContent = s.question?.text || 'المذيع هيختار السؤال';
-    $('scores').innerHTML = s.players.length ? s.players.map((p,i) => `<li><span>${i + 1}. ${escapeHTML(p.name)}</span><span class="score">${p.score}</span></li>`).join('') : '<li class="muted">مفيش لاعبين لسه</li>';
+    $('scores').innerHTML = s.players.length ? s.players.map((p,i) => `<li><span>${i + 1}. ${escapeHTML(p.name)} <span class="card-tally">🟨${p.yellow_cards || 0} 🟥${p.red_cards || 0}</span></span><span class="score">${p.score}</span></li>`).join('') : '<li class="muted">مفيش لاعبين لسه</li>';
   }
 });

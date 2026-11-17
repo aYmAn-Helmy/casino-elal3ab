@@ -9,7 +9,7 @@ const { QuestionBank } = require('./questions');
 const hash = (value) => crypto.createHash('sha256').update(value).digest('hex');
 
 class Game {
-  constructor({ dataDir, roomName = 'Casino Party LAN', maxPlayers = 20, correctPoints = 10, wrongPoints = 0 }) {
+  constructor({ dataDir, roomName = 'Casino Party LAN', maxPlayers = 20, correctPoints = 1, wrongPoints = 1 }) {
     fs.mkdirSync(dataDir, { recursive: true });
     this.db = new DatabaseSync(path.join(dataDir, 'game.sqlite'));
     this.db.exec(`
@@ -20,9 +20,15 @@ class Game {
         token_hash TEXT UNIQUE NOT NULL,
         name TEXT NOT NULL,
         score INTEGER NOT NULL DEFAULT 0,
+        yellow_cards INTEGER NOT NULL DEFAULT 0,
+        red_cards INTEGER NOT NULL DEFAULT 0,
         created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
       );
     `);
+    // Schema migration for pre-1.3 databases; never discard existing player scores.
+    const columns = new Set(this.db.prepare('PRAGMA table_info(players)').all().map(row => row.name));
+    if (!columns.has('yellow_cards')) this.db.exec('ALTER TABLE players ADD COLUMN yellow_cards INTEGER NOT NULL DEFAULT 0');
+    if (!columns.has('red_cards')) this.db.exec('ALTER TABLE players ADD COLUMN red_cards INTEGER NOT NULL DEFAULT 0');
     this.questions = new QuestionBank(this.db);
     // Seed the current 1000 text-only questions only when the bank is empty.
     // Keep any existing imported bank untouched.
@@ -46,11 +52,11 @@ class Game {
   }
 
   getPlayer(id) {
-    return this.db.prepare('SELECT id, name, score FROM players WHERE id = ?').get(id) || null;
+    return this.db.prepare('SELECT id, name, score, yellow_cards, red_cards FROM players WHERE id = ?').get(id) || null;
   }
   getByToken(token) {
     if (typeof token !== 'string' || !/^[a-f0-9]{64}$/.test(token)) return null;
-    return this.db.prepare('SELECT id, name, score FROM players WHERE token_hash = ?').get(hash(token)) || null;
+    return this.db.prepare('SELECT id, name, score, yellow_cards, red_cards FROM players WHERE token_hash = ?').get(hash(token)) || null;
   }
   join(name, token) {
     const cleanName = typeof name === 'string' ? name.trim().replace(/\s+/g, ' ') : '';
@@ -72,7 +78,7 @@ class Game {
     else this.connected.delete(playerId);
   }
   players() {
-    return this.db.prepare('SELECT id, name, score FROM players ORDER BY score DESC, created_at ASC')
+    return this.db.prepare('SELECT id, name, score, yellow_cards, red_cards FROM players ORDER BY score DESC, created_at ASC')
       .all().map((p) => ({ ...p, connected: this.connected.has(p.id), excluded: this.excluded.has(p.id) }));
   }
   state() {
@@ -98,7 +104,6 @@ class Game {
     if (!this.getPlayer(playerId)) return { ok: false, reason: 'اللاعب غير مسجل' };
     if (this.phase !== 'open') return { ok: false, reason: 'الجرس مقفول' };
     if (!Number.isInteger(submittedRoundId) || submittedRoundId !== this.roundId) return { ok: false, reason: 'ضغطة من جولة قديمة' };
-    if (this.excluded.has(playerId)) return { ok: false, reason: 'اتجاوبت غلط في السؤال ده' };
     this.winnerId = playerId;
     this.phase = 'answering';
     this.lastEvent = `${this.getPlayer(playerId).name} كسب الجرس`;
@@ -115,12 +120,15 @@ class Game {
     if (this.phase !== 'answering' || !this.winnerId) throw new Error('مفيش لاعب بيجاوب حاليًا');
     const player = this.getPlayer(this.winnerId);
     this.db.prepare('UPDATE players SET score = score - ? WHERE id = ?').run(this.wrongPoints, this.winnerId);
-    this.excluded.add(this.winnerId);
+    // After a wrong answer EVERY connected player may buzz again,
+    // including the one who was just marked wrong. Advance roundId to
+    // reject any delayed packets from the previous round.
+    this.excluded.clear();
     this.winnerId = null;
     this.roundId += 1;
-    const remaining = this.players().some((p) => p.connected && !p.excluded);
-    this.phase = remaining ? 'open' : 'closed';
-    this.lastEvent = `${player.name} جاوب غلط${this.wrongPoints ? ` (-${this.wrongPoints})` : ''} — ${remaining ? 'الجرس اتفتح للباقي' : 'مفيش لاعبين متاحين'}`;
+    const canBuzz = this.players().some(p => p.connected);
+    this.phase = canBuzz ? 'open' : 'closed';
+    this.lastEvent = `${player.name} جاوب غلط (-${this.wrongPoints}) — ${canBuzz ? 'الجرس اتفتح لكل اللاعبين من جديد' : 'مفيش لاعبين متصلين'}`;
     return this.state();
   }
   close() {
@@ -129,8 +137,22 @@ class Game {
     this.lastEvent = 'المذيع قفل الجرس';
     return this.state();
   }
+  card(playerId, color) {
+    if (color !== 'yellow' && color !== 'red') throw new Error('نوع الكارت غير صحيح');
+    const player = this.getPlayer(playerId);
+    if (!player) throw new Error('اللاعب المطلوب غير موجود');
+    // Yellow = -1, Red = -3. Neither card ejects a player.
+    const points = color === 'yellow' ? 1 : 3;
+    if (color === 'yellow') {
+      this.db.prepare('UPDATE players SET score = score - 1, yellow_cards = yellow_cards + 1 WHERE id = ?').run(playerId);
+    } else {
+      this.db.prepare('UPDATE players SET score = score - 3, red_cards = red_cards + 1 WHERE id = ?').run(playerId);
+    }
+    this.lastEvent = `${player.name} أخذ كارت ${color === 'yellow' ? 'أصفر' : 'أحمر'} (-${points})`;
+    return this.state();
+  }
   resetScores() {
-    this.db.exec('UPDATE players SET score = 0');
+    this.db.exec('UPDATE players SET score = 0, yellow_cards = 0, red_cards = 0');
     this.close();
     this.lastEvent = 'تم تصفير كل النقاط';
     return this.state();
