@@ -89,7 +89,9 @@ test('HTTP and real WebSocket player/admin buzzer flow on seeded LAN server', { 
     await delay(100);
   }
   assert.equal(response?.ok, true, 'HTTP server startup: ' + logs);
-  assert.equal((await response.json()).ok, true);
+  const health = await response.json();
+  assert.equal(health.ok, true);
+  assert.equal(health.questions, 1000);
   for (const pathname of ['/', '/play', '/admin', '/screen']) {
     const r = await fetch(`http://127.0.0.1:${port}${pathname}`);
     assert.equal(r.status, 200, pathname);

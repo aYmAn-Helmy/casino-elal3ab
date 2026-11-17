@@ -4,6 +4,25 @@
 
 > MVP v0.1.0: اللاعبين يفتحوا اللعبة من متصفح الموبايل، المذيع يتحكم في الجولات والنقاط، وكل الضغطات بتتحسم على السيرفر عبر WebSocket. **ملف Android APK غير متوفر حتى الآن.**
 
+## 🎮 تشغيل اللعبة على CasaOS — من الصفر
+
+على Mini PC بتاع CasaOS، افتح SSH ونفّذ الأوامر دي:
+
+```bash
+git clone https://github.com/aYmAn-Helmy/casino-elal3ab.git
+cd casino-elal3ab
+sudo bash install-casaos.sh
+```
+
+هيجهّز 1000 سؤال نصي في 11 نوع تلقائيًا، ولوحة المذيع، شاشة النتائج، وتطبيق الموبايل. السكربت بيطبع لك IP الجهاز وكلمة مرور المذيع العشوائية بعد التثبيت.
+
+- `http://CASAOS_IP:3000/play` — اللاعب
+- `http://CASAOS_IP:3000/admin` — المذيع
+- `http://CASAOS_IP:3000/screen` — التلفزيون
+- `http://CASAOS_IP:3000/download` — APK لو نزلت نسخة الإصدار على السيرفر
+
+التثبيت الأول يحتاج إنترنت لبناء Docker وتنزيل APK من GitHub Releases؛ اللعب بعدها كله على LAN. التطبيق Android يتطلب إدخال IP:PORT للسيرفر أول مرة. **[الدليل الكامل للمبتدئين](CASAOS_START_HERE_AR.md)**.
+
 ## مكونات المشروع
 - Node.js 24 + WebSocket (`ws`) للسيرفر والجرس
 - SQLite لتخزين اللاعبين والنقاط
