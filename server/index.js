@@ -60,6 +60,7 @@ const staticFiles = new Map([
   ['/style.css', ['public/style.css', 'text/css; charset=utf-8']],
   ['/shared.js', ['public/shared.js', 'text/javascript; charset=utf-8']],
   ['/play.js', ['public/play.js', 'text/javascript; charset=utf-8']],
+  ['/audio.js', ['public/audio.js', 'text/javascript; charset=utf-8']],
   ['/admin.js', ['public/admin.js', 'text/javascript; charset=utf-8']],
   ['/screen.js', ['public/screen.js', 'text/javascript; charset=utf-8']]
 ]);
