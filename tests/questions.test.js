@@ -59,14 +59,16 @@ test('next and reset usage avoid repeats until manually reset', (t) => {
   assert.equal(game.state().question.text, make(4).text);
 });
 
-test('bundled bank contains exactly 1000 unique valid questions, balanced across 3 types', (t) => {
-  const seed = require('../questions/original_1000.json').questions;
+test('bundled text-only bank has 1000 unique questions across 11 categories', (t) => {
+  const seed = require('../questions/text_only_1000.json').questions;
   assert.equal(seed.length, 1000);
   const count = {};
   const seen = new Set();
   for (const q of seed) {
     assert.ok(q.text.length > 0 && q.answer.length > 0 && q.category.length > 0);
-    assert.ok(q.source.includes('ليست من النسخة الرسمية'));
+    assert.ok(!('image' in q) && !('audio' in q) && !('video' in q), 'text only');
+    assert.ok(q.text.length <= 400 && q.answer.length <= 400, 'field length limits');
+    assert.ok(q.source.includes('ليست أسئلة لعبة مروان سري الرسمية'));
     const k = q.text.normalize('NFKC').toLowerCase().replace(/\s+/g, ' ');
     assert.ok(!seen.has(k), 'No duplicate: ' + q.text);
     seen.add(k);
@@ -76,7 +78,19 @@ test('bundled bank contains exactly 1000 unique valid questions, balanced across
       assert.equal([...reversed].reverse().join(''), q.answer);
     }
   }
-  assert.deepEqual(count, { 'كلمات معكوسة': 400, 'عواصم البلاد': 300, 'كلمة في أغنية': 300 });
+  assert.deepEqual(count, {
+    'كلمات معكوسة': 290,
+    'عواصم البلاد': 230,
+    'كلمة في أغنية': 200,
+    'معلومات عامة': 60,
+    'وصف أكلة': 50,
+    'وصف مكان': 30,
+    'وصف مهنة': 25,
+    'أكمل المثل الشعبي': 50,
+    'أفلام ومسلسلات': 25,
+    'الإفيه ده من فيلم إيه؟': 20,
+    'غنّي لمطرب معيّن': 20
+  });
   const game = fixture(t);
   assert.equal(game.state().questionStats.total, 1000);
   assert.equal(game.state().questionStats.remaining, 1000);
@@ -94,4 +108,23 @@ test('startup seeding never overwrites a previously imported question bank', (t)
   restarted.nextQuestion();
   assert.equal(restarted.state().question.text, make(993).text);
   restarted.stop();
+});
+
+test('food clues and folk sayings are playable as host-judged text questions', (t) => {
+  const game = fixture(t);
+  const seed = require('../questions/text_only_1000.json').questions;
+  const sample = [
+    seed.find(q => q.category === 'وصف أكلة'),
+    seed.find(q => q.category === 'أكمل المثل الشعبي'),
+    seed.find(q => q.category === 'الإفيه ده من فيلم إيه؟')
+  ];
+  game.replaceQuestions(sample);
+  assert.equal(game.state().questionStats.total, 3);
+  for (let i = 0; i < sample.length; i++) {
+    game.nextQuestion();
+    const state = game.state();
+    assert.ok(state.question.text.length > 0);
+    assert.equal(state.question.answer, undefined);
+    assert.ok(game.questions.hostCurrent().answer.length > 0);
+  }
 });
