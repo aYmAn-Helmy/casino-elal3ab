@@ -56,6 +56,26 @@ if ! grep -q '^ADMIN_PIN=.' .env; then
 fi
 docker compose -f docker-compose.yml config --quiet
 
+# Download the recorded reception bell once while internet is available.
+# The file stays local under /DATA/AppData and is served on /bell.mp3.
+# Source: Desk Bell Sound by Alexander, Orange Free Sounds, CC BY 4.0.
+# If the source cannot be reached, a synthesized mechanical bell fallback is used.
+BELL_FILE="$DATA_ROOT/data/bell.mp3"
+BELL_SOURCE="https://www.orangefreesounds.com/wp-content/uploads/2015/04/Desk-bell-sound.mp3"
+if [[ ! -s "$BELL_FILE" ]]; then
+  bell_tmp="$(mktemp "$DATA_ROOT/data/.desk-bell.XXXXXX")"
+  if curl -fL --retry 2 --connect-timeout 8 --max-time 35 "$BELL_SOURCE" -o "$bell_tmp" &&
+     [[ "$(wc -c < "$bell_tmp")" -gt 1000 ]]; then
+    mv -f "$bell_tmp" "$BELL_FILE"
+    chmod 644 "$BELL_FILE"
+    chown 1000:1000 "$BELL_FILE"
+    echo "تم حفظ تسجيل جرس حقيقي محليًا: $BELL_FILE"
+  else
+    rm -f "$bell_tmp"
+    echo "تعذر تنزيل تسجيل الجرس الحقيقي. الجرس البديل هيشتغل عادي؛ تقدر تحط تسجيلك باسم bell.mp3 في $DATA_ROOT/data"
+  fi
+fi
+
 echo "بنبني صورة Docker وبنشغّل اللعبة..."
 docker compose -f docker-compose.yml up -d --build
 

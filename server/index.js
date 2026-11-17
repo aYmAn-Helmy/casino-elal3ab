@@ -100,6 +100,12 @@ const server = http.createServer((req, res) => {
     res.end(JSON.stringify({ ok: true, app: 'Casino Party LAN', apkReady: !!findApk(), questions: game.questions.stats().total, players: game.players().length }));
     return;
   }
+  // The optional recorded desk bell lives in persistent CasaOS storage;
+  // it remains fully playable over local Wi-Fi even without internet access.
+  if (pathname === '/bell.mp3') {
+    serveFile(res, path.join(DATA_DIR, 'bell.mp3'), 'audio/mpeg');
+    return;
+  }
   if (pathname === '/download') {
     const filename = findApk();
     if (!filename) {

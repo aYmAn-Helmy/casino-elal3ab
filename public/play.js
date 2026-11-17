@@ -9,7 +9,7 @@ function updateSoundUI() {
   $('soundToggle').textContent = soundEnabled ? '🔊 الصوت شغال' : '🔇 الصوت مكتوم';
   $('soundToggle').setAttribute('aria-pressed', String(soundEnabled));
   $('soundHint').textContent = sounds.isSupported
-    ? 'جرس عند الضغطة، ونغمة نجاح بس بعد ما المذيع يحسب إجابتك صح ويضيف النقاط. مفيش صوت قفل.'
+    ? 'جرس ميكانيكي عند الضغط، ونغمة نجاح بعد ما المذيع يحسب إجابتك صح ويضيف النقطة. مفيش صوت قفل.'
     : 'المتصفح الحالي مش بيدعم تشغيل الصوت؛ الجرس هيشتغل عادي.';
 }
 updateSoundUI();

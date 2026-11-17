@@ -58,6 +58,7 @@ async function openClient(port) {
 test('HTTP and real WebSocket player/admin buzzer flow on seeded LAN server', { timeout: 45000 }, async (t) => {
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'casino-http-ws-'));
   const port = await freePort();
+  fs.writeFileSync(path.join(dataDir, 'bell.mp3'), Buffer.from('ID3sound-test'));
   const child = spawn(process.execPath, [path.join(__dirname, '..', 'server', 'index.js')], {
     env: {
       ...process.env,
@@ -104,6 +105,11 @@ test('HTTP and real WebSocket player/admin buzzer flow on seeded LAN server', { 
   assert.match(audioSource, /window\.GameSounds/);
   assert.match(audioSource, /play\('tap'\)/);
   assert.match(audioSource, /play\('win'\)/);
+
+  const bellResponse = await fetch(`http://127.0.0.1:${port}/bell.mp3`);
+  assert.equal(bellResponse.status, 200);
+  assert.match(bellResponse.headers.get('content-type'), /audio\/mpeg/);
+  assert.equal(Buffer.from(await bellResponse.arrayBuffer()).toString(), 'ID3sound-test');
 
   const host = await openClient(port);
   const playerA = await openClient(port);
