@@ -134,10 +134,10 @@ test('HTTP and real WebSocket player/admin buzzer flow on seeded LAN server', { 
   host.send({ type: 'host-action', action: 'correct' });
   const award = await playerA.next(m => m.type === 'answer-correct');
   assert.equal(award.playerId, a.id);
-  assert.equal(award.points, 10);
+  assert.equal(award.points, 1);
   assert.equal(award.roundId, opened.state.roundId);
-  const scored = await host.next(m => m.type === 'state' && m.state.players.some(p => p.id === a.id && p.score === 10));
-  assert.equal(scored.state.players.find(p => p.id === a.id).score, 10);
+  const scored = await host.next(m => m.type === 'state' && m.state.players.some(p => p.id === a.id && p.score === 1));
+  assert.equal(scored.state.players.find(p => p.id === a.id).score, 1);
   // An incorrect answer should NOT generate the reward message for anyone.
   host.send({ type: 'host-action', action: 'open' });
   const opened2 = await playerB.next(m => m.type === 'state' && m.state.phase === 'open' && m.state.roundId > opened.state.roundId);
@@ -145,6 +145,23 @@ test('HTTP and real WebSocket player/admin buzzer flow on seeded LAN server', { 
   assert.equal((await playerB.next(m => m.type === 'buzz-result' && m.ok)).ok, true);
   host.send({ type: 'host-action', action: 'wrong' });
   const afterWrong = await host.next(m => m.type === 'state' && m.state.lastEvent.includes('جاوب غلط'));
-  assert.equal(afterWrong.state.players.find(p => p.id === b.id).score, 0);
+  assert.equal(afterWrong.state.players.find(p => p.id === b.id).score, -1);
   await assert.rejects(playerB.next(m => m.type === 'answer-correct', 180), /Timeout/);
+  const everybody = await playerA.next(m => m.type === 'state' && m.state.phase === 'open' && m.state.roundId > opened2.state.roundId);
+  playerB.send({ type: 'buzz', roundId: everybody.state.roundId });
+  assert.equal((await playerB.next(m => m.type === 'buzz-result' && m.ok)).ok, true,
+    'same player is allowed to buzz after the wrong answer');
+  host.send({ type: 'host-action', action: 'wrong' });
+  await host.next(m => m.type === 'state' && m.state.players.some(p => p.id === b.id && p.score === -2));
+
+  // Cards are host-only. Guest must not be able to penalize anyone.
+  playerA.send({ type: 'host-action', action: 'yellow-card', playerId: b.id });
+  const error = await playerA.next(m => m.type === 'error');
+  assert.match(error.message, /المذيع/);
+  host.send({ type: 'host-action', action: 'yellow-card', playerId: b.id });
+  const yellow = await host.next(m => m.type === 'state' && m.state.players.some(p => p.id === b.id && p.yellow_cards === 1));
+  assert.equal(yellow.state.players.find(p => p.id === b.id).score, -3);
+  host.send({ type: 'host-action', action: 'red-card', playerId: b.id });
+  const red = await host.next(m => m.type === 'state' && m.state.players.some(p => p.id === b.id && p.red_cards === 1));
+  assert.equal(red.state.players.find(p => p.id === b.id).score, -6);
 });
