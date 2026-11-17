@@ -26,17 +26,28 @@ jobs:
         run: gradle :app:assembleDebug --no-daemon
       - name: Name APK for CasaOS
         run: cp android/app/build/outputs/apk/debug/app-debug.apk casino-elal3ab.apk
+      - name: Include real desk bell when downloadable
+        run: |
+          # Alexander / Orange Free Sounds — CC BY 4.0
+          curl -fL --retry 2 --connect-timeout 8 --max-time 45 \
+            "https://www.orangefreesounds.com/wp-content/uploads/2015/04/Desk-bell-sound.mp3" \
+            -o bell.mp3 || rm -f bell.mp3
+          if [ -s bell.mp3 ]; then echo "Physical bell downloaded"; else echo "Physical bell unavailable; local synthesized fallback works"; fi
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v0.1.3
           target_commitish: main
           name: Casino El Al3ab v0.1.3
-          files: casino-elal3ab.apk
+          files: |
+            casino-elal3ab.apk
+            bell.mp3
           body: |
             Casino El Al3ab Android client for CasaOS LAN.
             Install on Android, enter the CasaOS mini-PC IP and port, then play.
             This test APK is signed using a temporary debug key; later versions may need reinstalling.
             v0.1.3: Score +1 correct, -1 wrong then buzzer reopens for everyone. Yellow -1 and red -3 cards. Optional real recorded desk bell with CC BY 4.0 attribution.
             Mute/unmute is available in player UI and saved locally.
+            Physical bell recording by Alexander / Orange Free Sounds (CC BY 4.0):
+            https://orangefreesounds.com/desk-bell-sound/
             Same-Wi-Fi and LAN connection required.

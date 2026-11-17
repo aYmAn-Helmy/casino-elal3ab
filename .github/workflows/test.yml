@@ -18,6 +18,9 @@ jobs:
           bash -n install-casaos.sh doctor-casaos.sh
           cp .env.example .env
           docker compose -f docker-compose.yml config --quiet
+      - name: Check optional real desk bell source (nonblocking)
+        run: |
+          curl -fLsS --connect-timeout 7 --max-time 20 'https://www.orangefreesounds.com/wp-content/uploads/2015/04/Desk-bell-sound.mp3' -o /tmp/desk-bell-sample.mp3 && wc -c /tmp/desk-bell-sample.mp3 || echo 'Recording unavailable; synthesized fallback still works'
       - name: Build Docker container
         run: docker build -t casino-party-lan:test .
       - name: Smoke test the built image

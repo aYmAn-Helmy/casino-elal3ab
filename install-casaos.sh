@@ -62,9 +62,12 @@ docker compose -f docker-compose.yml config --quiet
 # If the source cannot be reached, a synthesized mechanical bell fallback is used.
 BELL_FILE="$DATA_ROOT/data/bell.mp3"
 BELL_SOURCE="https://www.orangefreesounds.com/wp-content/uploads/2015/04/Desk-bell-sound.mp3"
+BELL_RELEASE="https://github.com/aYmAn-Helmy/casino-elal3ab/releases/download/v0.1.3/bell.mp3"
 if [[ ! -s "$BELL_FILE" ]]; then
   bell_tmp="$(mktemp "$DATA_ROOT/data/.desk-bell.XXXXXX")"
-  if curl -fL --retry 2 --connect-timeout 8 --max-time 35 "$BELL_SOURCE" -o "$bell_tmp" &&
+  # Prefer the license-attributed copy packaged with the APK release.
+  if (curl -fLsS --retry 2 --connect-timeout 8 --max-time 35 "$BELL_RELEASE" -o "$bell_tmp" ||
+      curl -fLsS --retry 2 --connect-timeout 8 --max-time 35 "$BELL_SOURCE" -o "$bell_tmp") &&
      [[ "$(wc -c < "$bell_tmp")" -gt 1000 ]]; then
     mv -f "$bell_tmp" "$BELL_FILE"
     chmod 644 "$BELL_FILE"
