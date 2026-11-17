@@ -15,8 +15,8 @@ services:
       TZ: Africa/Cairo
       ADMIN_PIN: "${ADMIN_PIN:?Create .env with a secure ADMIN_PIN}"
       ROOM_NAME: "${ROOM_NAME:-Casino Party LAN}"
-      CORRECT_POINTS: "${CORRECT_POINTS:-10}"
-      WRONG_POINTS: "${WRONG_POINTS:-0}"
+      CORRECT_POINTS: "${CORRECT_POINTS:-1}"
+      WRONG_POINTS: "${WRONG_POINTS:-1}"
       MAX_PLAYERS: "${MAX_PLAYERS:-20}"
     volumes:
       - /DATA/AppData/casino-party-lan/data:/app/data

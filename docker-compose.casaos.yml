@@ -16,8 +16,8 @@ services:
       TZ: Africa/Cairo
       ADMIN_PIN: "CHANGE_THIS_TO_A_PRIVATE_PIN_2026"
       ROOM_NAME: "Casino Party LAN"
-      CORRECT_POINTS: "10"
-      WRONG_POINTS: "0"
+      CORRECT_POINTS: "1"
+      WRONG_POINTS: "1"
       MAX_PLAYERS: "20"
     volumes:
       - /DATA/AppData/casino-party-lan/data:/app/data

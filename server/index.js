@@ -22,8 +22,8 @@ const game = new Game({
   dataDir: DATA_DIR,
   roomName: process.env.ROOM_NAME || 'Casino Party LAN',
   maxPlayers: clamp(process.env.MAX_PLAYERS, 20, 2, 100),
-  correctPoints: clamp(process.env.CORRECT_POINTS, 10, 0, 10000),
-  wrongPoints: clamp(process.env.WRONG_POINTS, 0, 0, 10000)
+  correctPoints: clamp(process.env.CORRECT_POINTS, 1, 1, 10000),
+  wrongPoints: clamp(process.env.WRONG_POINTS, 1, 1, 10000)
 });
 const activePlayers = new Map();
 const sockets = new Set();
@@ -184,6 +184,8 @@ wss.on('connection', (ws) => {
             break;
           }
           case 'wrong': game.wrong(); break;
+          case 'yellow-card': game.card(msg.playerId, 'yellow'); break;
+          case 'red-card': game.card(msg.playerId, 'red'); break;
           case 'close': game.close(); break;
           case 'next-question': game.nextQuestion(msg.category || null); break;
           case 'reset-question-usage': game.resetQuestionUsage(); break;
