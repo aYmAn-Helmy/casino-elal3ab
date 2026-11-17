@@ -44,7 +44,9 @@ jobs:
           distribution: temurin
           java-version: "17"
       - name: Confirm Android SDK
-        run: test -d "$ANDROID_HOME" && echo "Android SDK found: $ANDROID_HOME"
+        run: |
+          test -d "$ANDROID_HOME"
+          echo "Android SDK found: $ANDROID_HOME"
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.9"
