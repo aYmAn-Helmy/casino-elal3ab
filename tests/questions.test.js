@@ -128,3 +128,20 @@ test('food clues and folk sayings are playable as host-judged text questions', (
     assert.ok(game.questions.hostCurrent().answer.length > 0);
   }
 });
+
+test('presenter can filter available questions by category without repeating', (t) => {
+  const game = fixture(t);
+  game.replaceQuestions([
+    { text: 'وصف أكلة من اختبار', answer: 'فتة', category: 'وصف أكلة' },
+    { text: 'مثل شعبي من اختبار', answer: 'الإجابة', category: 'أكمل المثل الشعبي' }
+  ]);
+  let categories = game.state().questionStats.categories;
+  assert.equal(categories.length, 2);
+  game.nextQuestion('وصف أكلة');
+  assert.equal(game.state().question.category, 'وصف أكلة');
+  assert.throws(() => game.nextQuestion('وصف أكلة'), /مفيش أسئلة جديدة في النوع المختار/);
+  game.nextQuestion('أكمل المثل الشعبي');
+  assert.equal(game.state().question.category, 'أكمل المثل الشعبي');
+  categories = game.state().questionStats.categories;
+  assert.equal(categories.every(x => x.remaining === 0), true);
+});

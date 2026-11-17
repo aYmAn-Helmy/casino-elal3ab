@@ -145,9 +145,9 @@ class Game {
     this.lastEvent = 'تم حذف اللاعبين وإعادة ضبط الغرفة';
     return this.state();
   }
-  nextQuestion() {
+  nextQuestion(category = null) {
     if (this.phase === 'answering') throw new Error('احسم إجابة اللاعب الحالي قبل السؤال التالي');
-    const q = this.questions.next();
+    const q = this.questions.next(category);
     this.close();
     this.excluded.clear();
     this.lastEvent = `سؤال جديد — ${q.category}`;

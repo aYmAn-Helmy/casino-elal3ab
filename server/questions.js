@@ -21,7 +21,12 @@ class QuestionBank {
 
   stats() {
     const row = this.db.prepare('SELECT COUNT(*) AS total, COALESCE(SUM(CASE WHEN used = 0 THEN 1 ELSE 0 END), 0) AS remaining FROM questions').get();
-    return { total: row.total, remaining: row.remaining };
+    const categories = this.db.prepare(`
+      SELECT category, COUNT(*) AS total,
+             COALESCE(SUM(CASE WHEN used = 0 THEN 1 ELSE 0 END), 0) AS remaining
+      FROM questions GROUP BY category ORDER BY category
+    `).all();
+    return { total: row.total, remaining: row.remaining, categories };
   }
 
   current() {
@@ -81,9 +86,14 @@ class QuestionBank {
     return this.stats();
   }
 
-  next() {
-    const next = this.db.prepare('SELECT id FROM questions WHERE used = 0 ORDER BY RANDOM() LIMIT 1').get();
-    if (!next) throw new Error('مفيش أسئلة جديدة. ارفع ملف أو صفّر حالة استخدام الأسئلة');
+  next(category = null) {
+    if (category !== null && (typeof category !== 'string' || category.length < 1 || category.length > 60)) {
+      throw new Error('التصنيف غير صحيح');
+    }
+    const next = category
+      ? this.db.prepare('SELECT id FROM questions WHERE used = 0 AND category = ? ORDER BY RANDOM() LIMIT 1').get(category)
+      : this.db.prepare('SELECT id FROM questions WHERE used = 0 ORDER BY RANDOM() LIMIT 1').get();
+    if (!next) throw new Error(category ? 'مفيش أسئلة جديدة في النوع المختار' : 'مفيش أسئلة جديدة. ارفع ملف أو صفّر حالة استخدام الأسئلة');
     this.db.prepare('UPDATE questions SET used = 1 WHERE id = ?').run(next.id);
     this.currentId = next.id;
     return this.current();

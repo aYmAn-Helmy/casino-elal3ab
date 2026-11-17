@@ -8,6 +8,8 @@
 <section class="card" id="questionPanel"><div class="row between"><h2>📚 بنك الأسئلة</h2><span class="pill" id="questionStats">0 سؤال</span></div>
 <p class="muted">النسخة بتتضمن 1000 سؤال من تأليفنا، وليست الأسئلة الرسمية لمروان سري. تقدر تستبدلها بملف JSON مصرح باستخدامه (حتى 1000 سؤال). الإجابة تظهر للمذيع فقط.</p>
 <label for="questionsFile">استيراد أسئلة من ملف JSON</label><input type="file" id="questionsFile" accept=".json,application/json">
+<label for="questionCategoryFilter">اختار نوع السؤال أو سيبه عشوائي</label>
+<select id="questionCategoryFilter"><option value="">كل الأنواع — عشوائي</option></select>
 <div class="btn-grid"><button class="action secondary" type="button" id="importQuestions">استيراد واستبدال بنك الأسئلة</button><button class="action positive" type="button" data-action="next-question" id="nextQuestion">السؤال التالي</button><button class="action gold" type="button" id="resetQuestionUsage">إعادة الأسئلة من البداية</button></div>
 <p id="questionStatus" class="notice" role="status"></p>
 <div class="question-display"><p class="muted" id="questionCategory">لا توجد أسئلة مختارة</p><h2 id="questionText">استورد الأسئلة، ثم اضغط السؤال التالي</h2><strong>الإجابة: <span id="questionAnswer">—</span></strong><p class="muted small" id="questionSource"></p></div></section>

@@ -3,3 +3,5 @@
 
 .question-display{margin-top:16px;padding:16px;background:#111d31;border-radius:13px;border:1px solid var(--line);line-height:1.8;overflow-wrap:anywhere}
 .question-display h2{margin:8px 0;white-space:pre-wrap}
+
+select{width:100%;background:#0c1628;border:1px solid #445c80;color:white;border-radius:12px;padding:13px;font-size:1rem;margin:7px 0 14px}

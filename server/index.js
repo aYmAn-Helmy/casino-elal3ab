@@ -172,7 +172,7 @@ wss.on('connection', (ws) => {
           case 'correct': game.correct(); break;
           case 'wrong': game.wrong(); break;
           case 'close': game.close(); break;
-          case 'next-question': game.nextQuestion(); break;
+          case 'next-question': game.nextQuestion(msg.category || null); break;
           case 'reset-question-usage': game.resetQuestionUsage(); break;
           case 'reset-scores': game.resetScores(); break;
           case 'clear-players':

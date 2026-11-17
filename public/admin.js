@@ -14,7 +14,33 @@ function render() {
   $('lastEvent').textContent = state.lastEvent;
   $('count').textContent = `${state.players.length} لاعب`;
   $('questionStats').textContent = `${state.questionStats?.total || 0} سؤال، باقي ${state.questionStats?.remaining || 0}`;
-  $('nextQuestion').disabled = !state.questionStats?.remaining || state.phase === 'answering';
+  const selected = $('questionCategoryFilter').value;
+  const categories = state.questionStats?.categories || [];
+  const desired = ['', ...categories.map(row => row.category)];
+  const actual = [...$('questionCategoryFilter').options].map(option => option.value);
+  if (JSON.stringify(desired) !== JSON.stringify(actual)) {
+    $('questionCategoryFilter').replaceChildren();
+    const all = document.createElement('option');
+    all.value = ''; all.textContent = 'كل الأنواع — عشوائي';
+    $('questionCategoryFilter').append(all);
+    for (const row of categories) {
+      const option = document.createElement('option');
+      option.value = row.category;
+      option.textContent = row.category;
+      $('questionCategoryFilter').append(option);
+    }
+    $('questionCategoryFilter').value = desired.includes(selected) ? selected : '';
+  }
+  for (const option of $('questionCategoryFilter').options) {
+    if (!option.value) continue;
+    const info = categories.find(row => row.category === option.value);
+    if (info) option.textContent = `${info.category} (${info.remaining} باقي)`;
+  }
+  const selectedCategory = $('questionCategoryFilter').value;
+  const remainingForSelected = selectedCategory
+    ? categories.find(row => row.category === selectedCategory)?.remaining || 0
+    : state.questionStats?.remaining || 0;
+  $('nextQuestion').disabled = remainingForSelected === 0 || state.phase === 'answering';
   $('questionCategory').textContent = hostQuestion?.category || state.question?.category || 'لم يتم اختيار سؤال';
   $('questionText').textContent = hostQuestion?.text || state.question?.text || 'استورد أسئلة من ملف JSON ثم اضغط السؤال التالي';
   $('questionAnswer').textContent = hostQuestion?.answer || '—';
@@ -51,7 +77,11 @@ $('loginForm').addEventListener('submit', (event) => {
   ws.send('host-login', { pin });
 });
 document.querySelectorAll('[data-action]').forEach((el) => {
-  el.addEventListener('click', () => { if (isHost) ws.send('host-action', { action: el.dataset.action }); });
+  el.addEventListener('click', () => {
+    if (!isHost) return;
+    const category = el.dataset.action === 'next-question' ? $('questionCategoryFilter').value : null;
+    ws.send('host-action', { action: el.dataset.action, ...(category ? { category } : {}) });
+  });
 });
 $('resetScores').addEventListener('click', () => {
   if (confirm('متأكد إنك عايز تصفر نقاط جميع اللاعبين؟')) ws.send('host-action', { action: 'reset-scores' });
@@ -78,3 +108,5 @@ $('importQuestions').addEventListener('click', async () => {
 $('resetQuestionUsage').addEventListener('click', () => {
   if (confirm('إعادة جميع الأسئلة لحالة غير مستخدمة؟')) ws.send('host-action', { action: 'reset-question-usage' });
 });
+
+$('questionCategoryFilter').addEventListener('change', render);
