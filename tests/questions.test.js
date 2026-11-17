@@ -58,3 +58,40 @@ test('next and reset usage avoid repeats until manually reset', (t) => {
   game.nextQuestion();
   assert.equal(game.state().question.text, make(4).text);
 });
+
+test('bundled bank contains exactly 1000 unique valid questions, balanced across 3 types', (t) => {
+  const seed = require('../questions/original_1000.json').questions;
+  assert.equal(seed.length, 1000);
+  const count = {};
+  const seen = new Set();
+  for (const q of seed) {
+    assert.ok(q.text.length > 0 && q.answer.length > 0 && q.category.length > 0);
+    assert.ok(q.source.includes('ليست من النسخة الرسمية'));
+    const k = q.text.normalize('NFKC').toLowerCase().replace(/\s+/g, ' ');
+    assert.ok(!seen.has(k), 'No duplicate: ' + q.text);
+    seen.add(k);
+    count[q.category] = (count[q.category] || 0) + 1;
+    if (q.category === 'كلمات معكوسة') {
+      const reversed = q.text.match(/«([^»]+)»/)[1];
+      assert.equal([...reversed].reverse().join(''), q.answer);
+    }
+  }
+  assert.deepEqual(count, { 'كلمات معكوسة': 400, 'عواصم البلاد': 300, 'كلمة في أغنية': 300 });
+  const game = fixture(t);
+  assert.equal(game.state().questionStats.total, 1000);
+  assert.equal(game.state().questionStats.remaining, 1000);
+});
+
+test('startup seeding never overwrites a previously imported question bank', (t) => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'casino-question-persist-'));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  const game = new Game({ dataDir: dir });
+  assert.equal(game.state().questionStats.total, 1000);
+  game.replaceQuestions([make(993)]);
+  game.stop();
+  const restarted = new Game({ dataDir: dir });
+  assert.equal(restarted.state().questionStats.total, 1);
+  restarted.nextQuestion();
+  assert.equal(restarted.state().question.text, make(993).text);
+  restarted.stop();
+});

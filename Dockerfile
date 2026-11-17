@@ -5,6 +5,7 @@ COPY package.json ./
 RUN npm install --omit=dev --no-audit --no-fund && npm cache clean --force
 COPY server ./server
 COPY public ./public
+COPY questions ./questions
 RUN mkdir -p /app/data /app/apk && chown -R node:node /app
 USER node
 EXPOSE 3000

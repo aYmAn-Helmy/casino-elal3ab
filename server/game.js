@@ -24,6 +24,15 @@ class Game {
       );
     `);
     this.questions = new QuestionBank(this.db);
+    // Add the bundled original questions on first launch only.
+    // Keep any existing imported bank untouched.
+    if (this.questions.stats().total === 0) {
+      const seedPath = path.join(__dirname, '..', 'questions', 'original_1000.json');
+      if (fs.existsSync(seedPath)) {
+        const seed = JSON.parse(fs.readFileSync(seedPath, 'utf8'));
+        this.questions.replace(seed.questions);
+      }
+    }
     this.roomName = roomName;
     this.maxPlayers = maxPlayers;
     this.correctPoints = correctPoints;
