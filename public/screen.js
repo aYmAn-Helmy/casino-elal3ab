@@ -12,6 +12,8 @@ connectGame({
     $('round').textContent = s.roundId;
     $('winner').textContent = s.winnerName ? `🔔 ${s.winnerName}` : 'جاهزين؟';
     $('event').textContent = s.lastEvent;
+    $('questionCategory').textContent = s.question?.category || 'السؤال';
+    $('questionText').textContent = s.question?.text || 'المذيع هيختار السؤال';
     $('scores').innerHTML = s.players.length ? s.players.map((p,i) => `<li><span>${i + 1}. ${escapeHTML(p.name)}</span><span class="score">${p.score}</span></li>`).join('') : '<li class="muted">مفيش لاعبين لسه</li>';
   }
 });

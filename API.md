@@ -58,3 +58,16 @@ State fields: `roomName`, `phase` (`idle`, `open`, `answering`, `closed`), `roun
 - Restrict the admin PIN to the host. Repeated failed logins on one connection are limited.
 - No remote code execution, Docker socket mount, privileged container, or public API key is required.
 - Winner is **first arrival at server**, not necessarily the first physical touch if Wi-Fi latency differs.
+## Question-bank actions (host only)
+
+After `host-login` succeeds:
+
+```json
+{ "type": "questions-import", "questions": [{ "text": "سؤال", "answer": "الإجابة", "category": "عام", "source": "مصدر المستخدم", "reference": "مرجع اختياري" }] }
+```
+
+Import atomically replaces the whole bank; 1–1000 distinct questions. Required string fields: text, answer, category; optional: source, reference. The host receives `import-ok` and a private `host-question` message. All users see only `state.question` (id, text, category) and `state.questionStats` (total, remaining), never the answer.
+
+Additional host commands: `{ "type": "host-action", "action": "next-question" }` and `{ "type": "host-action", "action": "reset-question-usage" }`.
+
+No third-party commercial questions are bundled.
