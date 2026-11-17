@@ -71,3 +71,14 @@ Import atomically replaces the whole bank; 1–1000 distinct questions. Required
 Additional host commands: `{ "type": "host-action", "action": "next-question" }` and `{ "type": "host-action", "action": "reset-question-usage" }`.
 
 No third-party commercial questions are bundled.
+
+
+## Player-only scoring notification (v0.1.2)
+
+When the host sends `{ "type": "host-action", "action": "correct" }` for the player who currently has the answering right, the server commits the score update and **only then** sends to that player's connected WebSocket:
+
+```json
+{ "type": "answer-correct", "playerId": "UUID", "roundId": 7, "points": 10 }
+```
+
+This notification is **not** sent when a buzzer is won (`buzz-result.ok`) or when the host marks an answer wrong; only a correct answer and awarded points should cause the player-side reward chime. The tap bell stays local to the tap gesture. There are no lock sounds.

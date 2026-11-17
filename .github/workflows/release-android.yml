@@ -29,14 +29,14 @@ jobs:
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v0.1.1
+          tag_name: v0.1.2
           target_commitish: main
-          name: Casino El Al3ab v0.1.1
+          name: Casino El Al3ab v0.1.2
           files: casino-elal3ab.apk
           body: |
             Casino El Al3ab Android client for CasaOS LAN.
             Install on Android, enter the CasaOS mini-PC IP and port, then play.
             This test APK is signed using a temporary debug key; later versions may need reinstalling.
-            v0.1.1: Instant tap bell and distinct winner chime on player's phone, no lock sounds.
+            v0.1.2: Instant local tap bell. Success chime only after the host marks the answer correct and awards the player's points. No lock sound.
             Mute/unmute is available in player UI and saved locally.
             Same-Wi-Fi and LAN connection required.

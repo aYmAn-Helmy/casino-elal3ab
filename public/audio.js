@@ -48,7 +48,7 @@ window.GameSounds = (() => {
         note(ctx, 830, now, 0.17, 0.15);
         note(ctx, 1245, now + 0.005, 0.13, 0.07);
       } else if (kind === 'win') {
-        // Distinct rising two-part success chime on server-confirmed win only.
+        // Distinct success chime only after the host awards points for a correct answer.
         note(ctx, 660, now, 0.25, 0.11);
         note(ctx, 880, now + 0.12, 0.31, 0.14);
         note(ctx, 1320, now + 0.12, 0.28, 0.055);

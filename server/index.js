@@ -170,7 +170,19 @@ wss.on('connection', (ws) => {
         if (!ws.isHost) { fail(ws, 'مطلوب تسجيل دخول المذيع'); return; }
         switch (msg.action) {
           case 'open': game.open(); break;
-          case 'correct': game.correct(); break;
+          case 'correct': {
+            // Only a correct answer awarded by the host triggers the reward chime.
+            // The buzzer winner receives no victory sound until their answer is marked correct.
+            const awardedPlayerId = game.winnerId;
+            game.correct();
+            const recipient = activePlayers.get(awardedPlayerId);
+            if (recipient) send(recipient, 'answer-correct', {
+              playerId: awardedPlayerId,
+              roundId: game.roundId,
+              points: game.correctPoints
+            });
+            break;
+          }
           case 'wrong': game.wrong(); break;
           case 'close': game.close(); break;
           case 'next-question': game.nextQuestion(msg.category || null); break;

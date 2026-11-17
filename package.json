@@ -1,6 +1,6 @@
 {
   "name": "casino-party-lan",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "description": "Offline LAN buzzer game for CasaOS (Node.js, WebSocket, SQLite)",
   "main": "server/index.js",
