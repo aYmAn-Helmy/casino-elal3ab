@@ -48,7 +48,13 @@ EOF
   chmod 600 .env
   echo "تم إنشاء .env بكلمة مرور عشوائية للمذيع"
 else
-  echo "تم العثور على .env موجود — هنستخدم إعداداته بدون تعديل"
+  echo "تم العثور على .env موجود — هنحافظ على كلمة مرور المذيع وبياناته"
+  # Fix the legacy default settings from v0.1.0 - v0.1.2 while
+  # preserving custom scores chosen intentionally by the host.
+  if grep -qx 'CORRECT_POINTS=10' .env || grep -qx 'WRONG_POINTS=0' .env; then
+    sed -i 's/^CORRECT_POINTS=10$/CORRECT_POINTS=1/; s/^WRONG_POINTS=0$/WRONG_POINTS=1/' .env
+    echo "تم تحديث قيم النقاط القديمة إلى: الصح +1 / الغلط -1"
+  fi
 fi
 if ! grep -q '^ADMIN_PIN=.' .env; then
   echo "ADMIN_PIN لازم يكون موجود في .env" >&2
