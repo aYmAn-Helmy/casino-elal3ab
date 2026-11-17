@@ -1,6 +1,24 @@
 'use strict';
 const $ = (id) => document.getElementById(id);
 const { connectGame, escapeHTML, phaseText } = window.GameUtil;
+const sounds = window.GameSounds;
+const SOUND_KEY = 'casino_sound_enabled';
+let soundEnabled = localStorage.getItem(SOUND_KEY) !== 'false';
+sounds.setEnabled(soundEnabled);
+function updateSoundUI() {
+  $('soundToggle').textContent = soundEnabled ? '🔊 الصوت شغال' : '🔇 الصوت مكتوم';
+  $('soundToggle').setAttribute('aria-pressed', String(soundEnabled));
+  $('soundHint').textContent = sounds.isSupported
+    ? 'صوت عند ضغط الجرس، وصوت مختلف لو كسبت الجولة. مفيش صوت قفل.'
+    : 'المتصفح الحالي مش بيدعم تشغيل الصوت؛ الجرس هيشتغل عادي.';
+}
+updateSoundUI();
+$('soundToggle').addEventListener('click', () => {
+  soundEnabled = !soundEnabled;
+  localStorage.setItem(SOUND_KEY, String(soundEnabled));
+  sounds.setEnabled(soundEnabled);
+  updateSoundUI();
+});
 let player = null; let state = null; let socketUp = false; let lastBuzzRound = -1;
 let savedName = localStorage.getItem('casino_name') || '';
 let savedToken = localStorage.getItem('casino_token') || '';
@@ -50,7 +68,11 @@ const ws = connectGame({
       render();
     } else if (msg.type === 'buzz-result') {
       $('feedback').textContent = msg.ok ? '🔔 كسبت الجرس!' : msg.reason;
-      if (msg.ok && navigator.vibrate) navigator.vibrate([100, 50, 100]);
+      if (msg.ok) {
+        // This response is sent only to the winner's phone.
+        sounds.win();
+        if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+      }
       render();
     } else if (msg.type === 'kicked') {
       player = null; savedToken = ''; localStorage.removeItem('casino_token');
@@ -68,6 +90,8 @@ $('joinForm').addEventListener('submit', (event) => {
 });
 $('buzzer').addEventListener('click', () => {
   if (!state || !player || $('buzzer').disabled) return;
+  // Local sound plays in the user's tap gesture, before sending to the server.
+  sounds.tap();
   lastBuzzRound = state.roundId;
   $('feedback').textContent = 'استلمنا الضغطة على الموبايل؛ مستنيين نتيجة السيرفر...';
   ws.send('buzz', { roundId: state.roundId }); render();

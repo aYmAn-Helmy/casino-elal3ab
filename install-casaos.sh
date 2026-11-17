@@ -62,7 +62,7 @@ docker compose -f docker-compose.yml up -d --build
 # Optional: download the signed (debug) Android client from the project release.
 # If GitHub is unreachable the web client remains fully playable.
 APK="$DATA_ROOT/apk/casino-elal3ab.apk"
-APK_RELEASE="https://github.com/aYmAn-Helmy/casino-elal3ab/releases/download/v0.1.0/casino-elal3ab.apk"
+APK_RELEASE="https://github.com/aYmAn-Helmy/casino-elal3ab/releases/download/v0.1.1/casino-elal3ab.apk"
 if [[ ! -s "$APK" ]]; then
   tempfile="$(mktemp "$DATA_ROOT/apk/.casino-apk.XXXXXX")"
   if curl -fLsS --connect-timeout 8 --max-time 90 "$APK_RELEASE" -o "$tempfile" && [[ -s "$tempfile" ]]; then

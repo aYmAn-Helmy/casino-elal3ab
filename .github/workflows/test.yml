@@ -34,6 +34,7 @@ jobs:
             sleep 1
           done
           curl -fsS http://127.0.0.1:33919/play > /dev/null
+          curl -fsS http://127.0.0.1:33919/audio.js > /dev/null
           docker stop casino-smoke
   android-debug-apk:
     runs-on: ubuntu-latest
