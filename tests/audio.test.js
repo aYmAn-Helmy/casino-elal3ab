@@ -79,10 +79,15 @@ test('missing Web Audio API never breaks buzzer actions', () => {
   assert.doesNotThrow(() => { sounds.tap(); sounds.win(); });
 });
 
-test('player UI only calls tap on button press and win for accepted buzz', () => {
+test('player UI plays a success chime only after host awards points for a correct answer', () => {
   assert.match(page, /id="soundToggle"/);
   assert.match(page, /src="\/audio.js"/);
   assert.match(player, /sounds\.tap\(\);\s*lastBuzzRound = state\.roundId/);
-  assert.match(player, /if \(msg\.ok\)\s*\{[^}]*sounds\.win\(\);/);
+  assert.match(player, /msg\.type === 'answer-correct'/);
+  assert.match(player, /msg\.playerId === player\.id && msg\.points > 0/);
+  assert.match(player, /sounds\.win\(\);/);
+  const buzzResultBlock = player.split("msg.type === 'buzz-result'")[1].split("msg.type === 'answer-correct'")[0];
+  assert.doesNotMatch(buzzResultBlock, /sounds\.win\(\)/);
+
   assert.doesNotMatch(player, /sounds\.close\(/);
 });

@@ -9,7 +9,7 @@ function updateSoundUI() {
   $('soundToggle').textContent = soundEnabled ? '🔊 الصوت شغال' : '🔇 الصوت مكتوم';
   $('soundToggle').setAttribute('aria-pressed', String(soundEnabled));
   $('soundHint').textContent = sounds.isSupported
-    ? 'صوت عند ضغط الجرس، وصوت مختلف لو كسبت الجولة. مفيش صوت قفل.'
+    ? 'جرس عند الضغطة، ونغمة نجاح بس بعد ما المذيع يحسب إجابتك صح ويضيف النقاط. مفيش صوت قفل.'
     : 'المتصفح الحالي مش بيدعم تشغيل الصوت؛ الجرس هيشتغل عادي.';
 }
 updateSoundUI();
@@ -67,13 +67,17 @@ const ws = connectGame({
       $('feedback').textContent = 'أنت داخل الغرفة، بالتوفيق!';
       render();
     } else if (msg.type === 'buzz-result') {
-      $('feedback').textContent = msg.ok ? '🔔 كسبت الجرس!' : msg.reason;
-      if (msg.ok) {
-        // This response is sent only to the winner's phone.
-        sounds.win();
-        if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-      }
+      $('feedback').textContent = msg.ok ? '🔔 كسبت حق الإجابة! جاوب واستنى تحكيم المذيع.' : msg.reason;
+      if (msg.ok && navigator.vibrate) navigator.vibrate([100, 50, 100]);
       render();
+    } else if (msg.type === 'answer-correct') {
+      // Sound is reserved for a host-verified correct answer with awarded points.
+      // Buzzer priority alone never plays this chime.
+      if (player && msg.playerId === player.id && msg.points > 0) {
+        sounds.win();
+        $('feedback').textContent = `✅ إجابة صح! اتضافت لك ${msg.points} نقطة. مبروك!`;
+        render();
+      }
     } else if (msg.type === 'kicked') {
       player = null; savedToken = ''; localStorage.removeItem('casino_token');
       $('feedback').textContent = msg.message; render();

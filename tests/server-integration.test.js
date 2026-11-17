@@ -129,7 +129,22 @@ test('HTTP and real WebSocket player/admin buzzer flow on seeded LAN server', { 
   assert.equal((await playerA.next(m => m.type === 'buzz-result')).ok, true);
   playerB.send({ type: 'buzz', roundId: opened.state.roundId });
   assert.equal((await playerB.next(m => m.type === 'buzz-result')).ok, false);
+  // No reward chime when merely winning the buzzer, only after correct.
+  await assert.rejects(playerA.next(m => m.type === 'answer-correct', 180), /Timeout/);
   host.send({ type: 'host-action', action: 'correct' });
+  const award = await playerA.next(m => m.type === 'answer-correct');
+  assert.equal(award.playerId, a.id);
+  assert.equal(award.points, 10);
+  assert.equal(award.roundId, opened.state.roundId);
   const scored = await host.next(m => m.type === 'state' && m.state.players.some(p => p.id === a.id && p.score === 10));
   assert.equal(scored.state.players.find(p => p.id === a.id).score, 10);
+  // An incorrect answer should NOT generate the reward message for anyone.
+  host.send({ type: 'host-action', action: 'open' });
+  const opened2 = await playerB.next(m => m.type === 'state' && m.state.phase === 'open' && m.state.roundId > opened.state.roundId);
+  playerB.send({ type: 'buzz', roundId: opened2.state.roundId });
+  assert.equal((await playerB.next(m => m.type === 'buzz-result' && m.ok)).ok, true);
+  host.send({ type: 'host-action', action: 'wrong' });
+  const afterWrong = await host.next(m => m.type === 'state' && m.state.lastEvent.includes('جاوب غلط'));
+  assert.equal(afterWrong.state.players.find(p => p.id === b.id).score, 0);
+  await assert.rejects(playerB.next(m => m.type === 'answer-correct', 180), /Timeout/);
 });
