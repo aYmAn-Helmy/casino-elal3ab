@@ -28,7 +28,7 @@ function render() {
     $('room').textContent = state.roomName;
     const mine = state.players.find((p) => player && p.id === player.id);
     if (mine) $('score').textContent = `${mine.score} نقطة`;
-    $('scores').innerHTML = state.players.length ? state.players.map((p) => `<li><span><span class="dot ${p.connected ? 'online' : ''}"></span>${escapeHTML(p.name)} ${p.id === state.winnerId ? '🔔' : ''}</span><span class="score">${p.score}</span></li>`).join('') : '<li class="muted">لسه محدش دخل</li>';
+    $('scores').innerHTML = state.players.length ? state.players.map((p) => `<li><span><span class="dot ${p.connected ? 'online' : ''}"></span>${escapeHTML(p.name)} ${p.id === state.winnerId ? '🔔' : ''} <span class="card-tally">🟨${p.yellow_cards || 0} 🟥${p.red_cards || 0}</span></span><span class="score">${p.score}</span></li>`).join('') : '<li class="muted">لسه محدش دخل</li>';
   }
   $('joinPanel').hidden = !!player;
   $('gamePanel').hidden = !player;
@@ -41,7 +41,6 @@ function render() {
   if (!socketUp) $('detail').textContent = 'الاتصال بالسيرفر مقطوع، جاري إعادة المحاولة';
   else if (state?.winnerId === player.id) $('detail').textContent = '🎉 أنت أول واحد وصل للسيرفر! اتفضل جاوب';
   else if (state?.phase === 'answering') $('detail').textContent = `${state.winnerName} كسب الجرس، مستنيين الإجابة`;
-  else if (mine?.excluded) $('detail').textContent = 'إجابتك السابقة غلط؛ استنى السؤال اللي بعده';
   else $('detail').textContent = state?.lastEvent || 'استنى المذيع يفتح الجرس';
 }
 const ws = connectGame({

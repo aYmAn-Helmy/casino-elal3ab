@@ -48,7 +48,16 @@ function render() {
   $('correct').disabled = $('wrong').disabled = state.phase !== 'answering';
   $('open').disabled = false;
   $('close').disabled = state.phase === 'closed' || state.phase === 'idle';
-  $('players').innerHTML = state.players.length ? state.players.map((p) => `<li><span><span class="dot ${p.connected ? 'online' : ''}"></span>${escapeHTML(p.name)} ${p.excluded ? '⛔' : ''} ${p.id === state.winnerId ? '🔔' : ''}</span><span class="score">${p.score}</span></li>`).join('') : '<li class="muted">لم ينضم لاعبون بعد</li>';
+  $('players').innerHTML = state.players.length ? state.players.map(p => `
+    <li class="admin-player-row">
+      <span class="player-identity"><span class="dot ${p.connected ? 'online' : ''}"></span>${escapeHTML(p.name)} ${p.id === state.winnerId ? '🔔' : ''}</span>
+      <span class="player-cards"><span class="pill card-count">🟨 ${p.yellow_cards || 0}</span><span class="pill card-count">🟥 ${p.red_cards || 0}</span></span>
+      <span class="score">${p.score}</span>
+      <span class="card-actions">
+        <button type="button" class="card-action yellow-card" data-card="yellow" data-player-id="${escapeHTML(p.id)}" aria-label="كارت أصفر للاعب ${escapeHTML(p.name)}">🟨 أصفر −1</button>
+        <button type="button" class="card-action red-card" data-card="red" data-player-id="${escapeHTML(p.id)}" aria-label="كارت أحمر للاعب ${escapeHTML(p.name)}">🟥 أحمر −3</button>
+      </span>
+    </li>`).join('') : '<li class="muted">لم ينضم لاعبون بعد</li>';
 }
 const ws = connectGame({
   onOpen(api) {
@@ -110,3 +119,16 @@ $('resetQuestionUsage').addEventListener('click', () => {
 });
 
 $('questionCategoryFilter').addEventListener('change', render);
+
+$('players').addEventListener('click', (event) => {
+  const button = event.target.closest('button[data-card]');
+  if (!button || !isHost || !state) return;
+  const playerId = button.dataset.playerId;
+  const player = state.players.find(p => p.id === playerId);
+  if (!player) return;
+  const color = button.dataset.card;
+  if (color !== 'yellow' && color !== 'red') return;
+  const label = color === 'yellow' ? 'أصفر (-1)' : 'أحمر (-3)';
+  if (!confirm(`تأكيد كارت ${label} للاعب ${player.name}؟`)) return;
+  ws.send('host-action', { action: color === 'yellow' ? 'yellow-card' : 'red-card', playerId });
+});
