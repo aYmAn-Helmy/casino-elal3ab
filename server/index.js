@@ -38,6 +38,12 @@ function broadcastState() {
   const state = game.state();
   for (const ws of sockets) send(ws, 'state', { state });
 }
+function broadcastHostQuestion() {
+  const question = game.questions.hostCurrent();
+  for (const ws of sockets) {
+    if (ws.isHost) send(ws, 'host-question', { question });
+  }
+}
 function fail(ws, message) { send(ws, 'error', { message }); }
 function pinMatches(input) {
   if (typeof input !== 'string') return false;
@@ -106,7 +112,7 @@ const server = http.createServer((req, res) => {
   serveFile(res, path.join(APP_DIR, file[0]), file[1]);
 });
 
-const wss = new WebSocket.Server({ noServer: true, maxPayload: 4096, perMessageDeflate: false });
+const wss = new WebSocket.Server({ noServer: true, maxPayload: 2500000, perMessageDeflate: false });
 server.on('upgrade', (req, socket, head) => {
   let pathname;
   try { pathname = new URL(req.url, 'http://localhost').pathname; }
@@ -158,6 +164,7 @@ wss.on('connection', (ws) => {
         ws.failedLogins = 0;
         send(ws, 'host-ok');
         send(ws, 'state', { state: game.state() });
+        send(ws, 'host-question', { question: game.questions.hostCurrent() });
       } else if (msg.type === 'host-action') {
         if (!ws.isHost) { fail(ws, 'مطلوب تسجيل دخول المذيع'); return; }
         switch (msg.action) {
@@ -165,6 +172,8 @@ wss.on('connection', (ws) => {
           case 'correct': game.correct(); break;
           case 'wrong': game.wrong(); break;
           case 'close': game.close(); break;
+          case 'next-question': game.nextQuestion(); break;
+          case 'reset-question-usage': game.resetQuestionUsage(); break;
           case 'reset-scores': game.resetScores(); break;
           case 'clear-players':
             game.clearPlayers();
@@ -177,6 +186,14 @@ wss.on('connection', (ws) => {
           default: throw new Error('أمر غير معروف');
         }
         broadcastState();
+        broadcastHostQuestion();
+      } else if (msg.type === 'questions-import') {
+        if (!ws.isHost) { fail(ws, 'مطلوب تسجيل دخول المذيع'); return; }
+        if (!Array.isArray(msg.questions)) { fail(ws, 'الملف لازم يحتوي قائمة أسئلة'); return; }
+        const state = game.replaceQuestions(msg.questions);
+        send(ws, 'import-ok', { count: state.questionStats.total });
+        broadcastState();
+        broadcastHostQuestion();
       }
     } catch (err) { fail(ws, err.message || 'حصل خطأ'); }
   });

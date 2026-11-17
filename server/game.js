@@ -4,6 +4,7 @@ const crypto = require('node:crypto');
 const path = require('node:path');
 const fs = require('node:fs');
 const { DatabaseSync } = require('node:sqlite');
+const { QuestionBank } = require('./questions');
 
 const hash = (value) => crypto.createHash('sha256').update(value).digest('hex');
 
@@ -22,6 +23,7 @@ class Game {
         created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
       );
     `);
+    this.questions = new QuestionBank(this.db);
     this.roomName = roomName;
     this.maxPlayers = maxPlayers;
     this.correctPoints = correctPoints;
@@ -70,7 +72,8 @@ class Game {
     return {
       roomName: this.roomName, phase: this.phase, roundId: this.roundId,
       winnerId: this.winnerId, winnerName: winner ? winner.name : null,
-      players, correctPoints: this.correctPoints, wrongPoints: this.wrongPoints,
+      players, question: this.questions.publicCurrent(), questionStats: this.questions.stats(),
+      correctPoints: this.correctPoints, wrongPoints: this.wrongPoints,
       lastEvent: this.lastEvent, serverTime: Date.now()
     };
   }
@@ -131,6 +134,29 @@ class Game {
     this.phase = 'idle';
     this.winnerId = null;
     this.lastEvent = 'تم حذف اللاعبين وإعادة ضبط الغرفة';
+    return this.state();
+  }
+  nextQuestion() {
+    if (this.phase === 'answering') throw new Error('احسم إجابة اللاعب الحالي قبل السؤال التالي');
+    const q = this.questions.next();
+    this.close();
+    this.excluded.clear();
+    this.lastEvent = `سؤال جديد — ${q.category}`;
+    return this.state();
+  }
+  replaceQuestions(rows) {
+    if (this.phase === 'answering') throw new Error('احسم الإجابة أولًا قبل استيراد بنك جديد');
+    const stats = this.questions.replace(rows);
+    this.close();
+    this.excluded.clear();
+    this.lastEvent = `تم استيراد ${stats.total} سؤال`;
+    return this.state();
+  }
+  resetQuestionUsage() {
+    if (this.phase === 'answering') throw new Error('احسم الإجابة أولًا');
+    const stats = this.questions.resetUsage();
+    this.close();
+    this.lastEvent = `تمت إعادة ${stats.total} سؤال لقائمة الأسئلة المتاحة`;
     return this.state();
   }
   stop() { this.db.close(); }
