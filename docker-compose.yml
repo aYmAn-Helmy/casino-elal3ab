@@ -1,0 +1,25 @@
+# SSH/CLI variant: builds the Docker image from local source
+name: casino-party-lan
+services:
+  casino-party:
+    build: .
+    image: casino-party-lan:0.1.0
+    container_name: casino-party-lan
+    restart: unless-stopped
+    init: true
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      TZ: Africa/Cairo
+      ADMIN_PIN: "${ADMIN_PIN:?Create .env with a secure ADMIN_PIN}"
+      ROOM_NAME: "${ROOM_NAME:-Casino Party LAN}"
+      CORRECT_POINTS: "${CORRECT_POINTS:-10}"
+      WRONG_POINTS: "${WRONG_POINTS:-0}"
+      MAX_PLAYERS: "${MAX_PLAYERS:-20}"
+    volumes:
+      - /DATA/AppData/casino-party-lan/data:/app/data
+      - /DATA/AppData/casino-party-lan/apk:/app/apk:ro
+    security_opt:
+      - no-new-privileges:true

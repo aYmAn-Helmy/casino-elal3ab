@@ -1,0 +1,1 @@
+Place casino-party.apk in /DATA/AppData/casino-party-lan/apk/ on the CasaOS host. This repository does not yet include an Android APK. Players can use /play in their mobile browsers.

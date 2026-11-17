@@ -1,0 +1,42 @@
+# CasaOS App Store > Custom Install > Import variant.
+# Build the local image first using: docker build -t casino-party-lan:0.1.0 .
+# CHANGE ADMIN_PIN before importing this file!
+name: casino-party-lan
+services:
+  casino-party:
+    image: casino-party-lan:0.1.0
+    container_name: casino-party-lan
+    restart: unless-stopped
+    init: true
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      TZ: Africa/Cairo
+      ADMIN_PIN: "CHANGE_THIS_TO_A_PRIVATE_PIN_2026"
+      ROOM_NAME: "Casino Party LAN"
+      CORRECT_POINTS: "10"
+      WRONG_POINTS: "0"
+      MAX_PLAYERS: "20"
+    volumes:
+      - /DATA/AppData/casino-party-lan/data:/app/data
+      - /DATA/AppData/casino-party-lan/apk:/app/apk:ro
+    security_opt:
+      - no-new-privileges:true
+x-casaos:
+  id: com.ayman.casino-party-lan
+  version: "0.1.0"
+  scheme: http
+  architectures:
+    - amd64
+  main: casino-party
+  title:
+    en_US: Casino Party LAN
+  description:
+    en_US: Local Wi-Fi multiplayer buzzer game
+  tagline:
+    en_US: Local party buzzer & scoring
+  category: Entertainment
+  port_map: "3000"
+  index: /

@@ -1,0 +1,117 @@
+# Casino Party LAN — MVP for CasaOS (x86_64 Mini PC)
+
+نسخة أولية تعمل على شبكة LAN: جرس لكل لاعب من متصفح الموبايل، لوحة مذيع، شاشة نتائج، نقاط محفوظة في SQLite، وصفحة تحميل APK **في المستقبل**. **لا تحتوي الحزمة على APK**. المتصفح يشتغل بالفعل على الموبايل بدون APK.
+
+## محتويات الحزمة
+
+- `server/index.js`: HTTP + WebSocket ونظام صلاحيات المذيع.
+- `server/game.js`: قواعد اللعب وSQLite (Node.js built-in `node:sqlite`).
+- `public/`: واجهات اللاعب والمذيع وشاشة النتائج.
+- `Dockerfile`: بناء صورة Node.js 24 مع مكتبة `ws`.
+- `docker-compose.yml`: بناء وتشغيل مباشر عبر SSH + Docker Compose.
+- `docker-compose.casaos.yml`: استيراد داخل واجهة CasaOS **بعد بناء الصورة محليًا**.
+- `.env.example`: إعدادات النموذج.
+- `tests/`: اختبارات محرك اللعبة.
+
+## التجهيز على جهاز CasaOS
+
+1. انقل مجلد المشروع إلى جهاز CasaOS (مثلاً `/opt/casino-party-casaos`) بواسطة SCP أو ملفات CasaOS.
+2. ادخل إلى الجهاز عبر SSH:
+
+```bash
+cd /opt/casino-party-casaos
+uname -m  # المتوقع x86_64
+sudo mkdir -p /DATA/AppData/casino-party-lan/{data,apk}
+sudo chown -R 1000:1000 /DATA/AppData/casino-party-lan/data
+```
+
+> لا تشتغل على منفذ 3000 لو مستخدم مسبقًا. استبدل المنفذ الخارجي في Compose (مثلاً `3100:3000`) واتصل بـ `3100`.
+
+## طريقة A — التشغيل من SSH مباشرة
+
+```bash
+cd /opt/casino-party-casaos
+cp .env.example .env
+nano .env  # غير ADMIN_PIN لقيمة سرية قوية (8 حروف أو أكثر)
+docker compose -f docker-compose.yml up -d --build
+docker compose -f docker-compose.yml ps
+docker compose -f docker-compose.yml logs --tail=50
+```
+
+يتطلب بناء الصورة سحب `node:24-alpine` وتنزيل مكتبة `ws` من npm **مرة واحدة على الأقل مع وجود إنترنت على السيرفر**. اللعب نفسه لا يحتاج إنترنت.
+
+> لو نفذت طريقة A بالفعل: **لا تشغّل نفس الحاوية مرة ثانية عبر طريقة B**. تستطيع استيراد التطبيق الموجود من قائمة تطبيقات CasaOS إن كانت نسختك تدعم ذلك.
+
+## طريقة B — يظهر كتطبيق مخصص داخل CasaOS
+
+الخطوات بالترتيب:
+
+1. نفّذ تجهيز المجلدات أعلاه.
+2. ابنِ الصورة عبر SSH **بدون** تشغيل Compose:
+
+```bash
+cd /opt/casino-party-casaos
+docker build -t casino-party-lan:0.1.0 .
+```
+
+3. افتح لوحة CasaOS ← **App Store** ← **Custom Install** ← **Import** (المسميات قد تختلف).
+4. الصق محتويات `docker-compose.casaos.yml`، وليس `docker-compose.yml`.
+5. **غيّر قيمة `ADMIN_PIN`** في النص قبل الضغط على Install، وتأكد من منفذ 3000 والمسارات.
+6. ثبّت التطبيق وافتحه من واجهة CasaOS. إذا لم تقبل واجهة CasaOS كتلة `x-casaos`، احذف هذه الكتلة فقط وأعد الاستيراد.
+
+**هام:** صورة `casino-party-lan:0.1.0` محلية وليست منشورة على Docker Hub، لذلك بناء الصورة عبر SSH خطوة أساسية في طريقة B. عند نقل المشروع لجهاز جديد يلزم إعادة البناء أو نشر الصورة إلى registry.
+
+## فتح اللعبة من الموبايلات
+
+استخدم IP الحقيقي لـ Mini PC، كمثال توضيحي فقط: `192.168.1.100`.
+
+- الصفحة الرئيسية: `http://192.168.1.100:3000/`
+- اللاعب: `http://192.168.1.100:3000/play`
+- المذيع: `http://192.168.1.100:3000/admin`
+- شاشة التلفزيون: `http://192.168.1.100:3000/screen`
+- اختبار السيرفر: `http://192.168.1.100:3000/api/health`
+- تحميل APK عندما يتوفر: `http://192.168.1.100:3000/download`
+
+الترتيب: المذيع يدخل بكلمة المرور، اللاعبين يدخلوا بأسمائهم، المذيع يضغط «افتح جولة جديدة»، أول رسالة جرس صحيحة تصل للسيرفر تقفل الجرس وتحدد الفائز، المذيع يضغط «إجابة صح» أو «غلط».
+
+## تجهيز تنزيل APK لاحقًا
+
+بعد **بناء تطبيق أندرويد** لاحقًا (Flutter مثلاً)، انسخ ملف الـAPK:
+
+```bash
+sudo cp path/to/app-release.apk /DATA/AppData/casino-party-lan/apk/casino-party.apk
+sudo chmod 644 /DATA/AppData/casino-party-lan/apk/casino-party.apk
+```
+
+سينزّل رابط `/download` الملف تلقائيًا بدون إعادة تشغيل الحاوية. هذه الحزمة **لا تبني ولا تنتج APK**. واجهة `/play` تؤدي وظيفة اللاعب الآن من متصفح Android أو iPhone.
+
+## البيانات والنسخ الاحتياطي
+
+النتائج واللاعبون محفوظون في `/DATA/AppData/casino-party-lan/data/game.sqlite` مع ملفات WAL المؤقتة. أخذ نسخة احتياطية آمنة: أوقف الحاوية مؤقتًا وانسخ **مجلد `data` كاملًا**، أو استخدم آلية نسخ احتياطي مخصصة لSQLite. لا تحذف `data` عند التحديث.
+
+## استكشاف الأخطاء
+
+- عدم فتح الموقع: نفّذ `docker ps`, `docker logs casino-party-lan`, وتحقق من IP والمنفذ والجدار الناري.
+- عدم دخول موبايل: تأكد أنه على نفس شبكة Wi-Fi ولا يوجد `AP Isolation / Client Isolation`.
+- `SQLITE_CANTOPEN`: تأكد من ملكية مجلد `data` لـUID 1000 (انظر `chown`).
+- `Image not found` في CasaOS: نفذ `docker build -t casino-party-lan:0.1.0 .` على **نفس الجهاز**.
+- `port is already allocated`: غيّر الربط الخارجي إلى `3100:3000` في Compose.
+- تحميل APK يعطي 404: هذا متوقع قبل وضع ملف `.apk` في مجلد `apk`.
+- الإيقاف بطريقة A: `docker compose down` (الملفات داخل `/DATA/AppData` ستظل محفوظة).
+- تعديل `ADMIN_PIN`: غيّره في Compose/`.env` ثم أعد إنشاء الحاوية، ولا تفتحه في شبكة عامة.
+
+## نطاق النسخة الحالية
+
+✅ متصفح موبايل + لوحة مذيع + WebSocket + أول ضغطة تصل للسيرفر + نقاط SQLite + شاشة نتائج + إعادة اتصال + إدارة جولات + رابط تنزيل APK بعد رفعه.
+
+⏳ غير منفذ بعد: تطبيق APK فعلي، QR Code، مؤثر صوتي مخصص، بنك أسئلة، أدوار فرق، مؤقت إجابة، حماية متقدمة ضد أجهزة خبيثة أو شبكة غير موثوقة.
+
+## اختبار محرك اللعبة من المصدر
+
+يتطلب Node.js 22.16 أو أحدث يدعم `node:sqlite` (يفضل Node.js 24):
+
+```bash
+npm test
+```
+
+فقط اختبارات قواعد اللعبة؛ يجب اختبار WebSocket وواجهات الموبايلات على الجهاز الحقيقي بعد تثبيت الاعتماديات وتشغيل الحاوية.
