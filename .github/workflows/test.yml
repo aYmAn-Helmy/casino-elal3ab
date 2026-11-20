@@ -63,3 +63,30 @@ jobs:
           path: |
             android/app/build/outputs/apk/debug/app-debug.apk
             android/hub/build/outputs/apk/debug/hub-debug.apk
+
+  phone-hub-emulator-smoke:
+    needs: android-debug-apk
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - run: npm install --no-audit --no-fund
+      - uses: actions/download-artifact@v4
+        with:
+          name: casino-elal3ab-player-and-hub-apks
+          path: .
+      - name: Check APK assets
+        run: |
+          test -s android/hub/build/outputs/apk/debug/hub-debug.apk
+          unzip -Z1 android/hub/build/outputs/apk/debug/hub-debug.apk | grep -q 'assets/text_only_1000.json'
+          unzip -Z1 android/hub/build/outputs/apk/debug/hub-debug.apk | grep -q 'assets/admin.html'
+          unzip -Z1 android/hub/build/outputs/apk/debug/hub-debug.apk | grep -q 'assets/play.html'
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_6
+          script: bash scripts/test-android-hub.sh
