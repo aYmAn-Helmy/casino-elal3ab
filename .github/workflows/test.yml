@@ -1,4 +1,7 @@
 name: Validate server, Docker and Android
+concurrency:
+  group: phone-hub-validation-${{ github.ref }}
+  cancel-in-progress: true
 on:
   push:
     branches: ["main", "feat/**"]
@@ -54,10 +57,45 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.9"
-      - name: Build installable Android APK
-        run: gradle :app:assembleDebug --no-daemon
+      - name: Build both Android APKs + test hub buzzer rules
+        run: gradle :hub:testDebugUnitTest :app:assembleDebug :hub:assembleDebug --no-daemon
         working-directory: android
       - uses: actions/upload-artifact@v4
         with:
-          name: casino-elal3ab-debug-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: casino-elal3ab-player-and-hub-apks
+          path: |
+            android/app/build/outputs/apk/debug/app-debug.apk
+            android/hub/build/outputs/apk/debug/hub-debug.apk
+
+  phone-hub-emulator-smoke:
+    needs: android-debug-apk
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - run: npm install --no-audit --no-fund
+      - uses: actions/download-artifact@v4
+        with:
+          name: casino-elal3ab-player-and-hub-apks
+          # upload-artifact stores paths relative to the shared android/ ancestor.
+          path: android
+      - name: Check APK assets
+        run: |
+          APK=android/hub/build/outputs/apk/debug/hub-debug.apk
+          test -s "$APK"
+          unzip -Z1 "$APK" | grep '^assets/' | head -40
+          for path in assets/text_only_1000.json assets/admin.html assets/play.html; do
+            if ! unzip -Z1 "$APK" | grep -Fx "$path"; then
+              echo "Missing $path from hub APK" >&2
+              exit 1
+            fi
+          done
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_6
+          script: bash scripts/test-android-hub.sh
