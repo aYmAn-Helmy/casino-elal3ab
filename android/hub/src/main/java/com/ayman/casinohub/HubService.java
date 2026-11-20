@@ -60,7 +60,7 @@ public final class HubService extends Service {
             return START_NOT_STICKY;
         }
         if (stopping) return START_NOT_STICKY;
-        if (Build.VERSION.SDK_INT >= 29) {
+        if (Build.VERSION.SDK_INT >= 34) {
             startForeground(NOTIFICATION_ID, notification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE);
         } else {
             startForeground(NOTIFICATION_ID, notification());
