@@ -65,3 +65,20 @@ docker compose up -d --build
 - المذيع يقدر يدي كارت **أصفر −1** أو **أحمر −3** لأي لاعب؛ الكروت لا تطرد اللاعب، ويتسجل عددها جنب نقاطه.
 - صوت الجرس عند الضغطة: تسجيل جرس استقبال حقيقي مرخّص CC BY 4.0 يحاول سكربت التثبيت تنزيله إلى `/DATA/AppData/casino-party-lan/data/bell.mp3`، وصوت معدني مُولّد كبديل لو التحميل ما نجحش. **مش نفس التسجيل الرسمي المؤكد من لعبة مروان سري** بدون عينة من الصوت الأصلي.
 - نغمة النجاح تشتغل **فقط بعد ما المذيع يختار إجابة صح وتُضاف النقاط**. مفيش صوت قفل. باقي إعدادات CasaOS وتشغيل الموبايل زي ما هي.
+
+
+## 📱 NEW: The Android phone itself is the HUB — v0.2.0
+
+The **separate Phone Hub APK** hosts the entire multiplayer game directly on an Android phone. **No CasaOS, PC, Docker or internet is required after the APK is installed.** Download `casino-elal3ab-hub.apk` from [GitHub Releases](https://github.com/aYmAn-Helmy/casino-elal3ab/releases/tag/v0.2.0).
+
+1. Install **Hub** on one Android phone (Android 6+). Open the app and tap **Start server**.
+2. Connect everyone to the host phone's manually enabled hotspot, or connect all phones to the same Wi-Fi. The host app does not switch on hotspot automatically.
+3. The Hub app shows Wi-Fi/hotspot IP addresses, a **QR code** and a shareable `http://HOST_IP:3000/play` link.
+4. Players scan QR or open the link in a browser. The existing `casino-elal3ab.apk` player APK can connect to the same IP.
+5. The host taps **Open presenter dashboard** and uses the private host PIN displayed by the Hub app; `/screen` shows the public scoreboard on a TV.
+
+The phone hosts **1000 bundled original text questions in 11 categories**, persistent SQLite scores/cards/usage, host-only answers, WebSocket first-buzz arbitration, +1 correct/−1 wrong and yellow/red cards. Audio stays on the player's phone. All HTML/CSS/JS pages reuse the CasaOS project source.
+
+Android Hub uses a **user-started foreground service** with a persistent notification and partial wake lock. Device battery optimization, hotspot isolation, OEM restrictions and Wi-Fi policies can still affect availability when the screen is off; **do a real two-device test before your party**. Keep the host phone charging. Local unencrypted HTTP: never expose port 3000 to the Internet.
+
+Both separate APKs are included in the v0.2.0 release. The prior CasaOS path remains available.

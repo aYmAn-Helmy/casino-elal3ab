@@ -4,4 +4,4 @@ dependencyResolutionManagement {
   repositories { google(); mavenCentral() }
 }
 rootProject.name = 'CasinoElAl3ab'
-include(':app')
+include(':app', ':hub')
