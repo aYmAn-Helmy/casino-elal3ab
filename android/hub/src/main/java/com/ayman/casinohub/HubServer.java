@@ -6,14 +6,14 @@ import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.nanohttpd.protocols.http.IHTTPSession;
-import org.nanohttpd.protocols.http.NanoHTTPD;
-import org.nanohttpd.protocols.http.response.Response;
-import org.nanohttpd.protocols.http.response.Status;
-import org.nanohttpd.protocols.websockets.NanoWSD;
-import org.nanohttpd.protocols.websockets.WebSocket;
-import org.nanohttpd.protocols.websockets.WebSocketFrame;
-import org.nanohttpd.protocols.websockets.WebSocketFrame.CloseCode;
+import fi.iki.elonen.NanoHTTPD;
+import fi.iki.elonen.NanoHTTPD.IHTTPSession;
+import fi.iki.elonen.NanoHTTPD.Response;
+import fi.iki.elonen.NanoHTTPD.Response.Status;
+import fi.iki.elonen.NanoWSD;
+import fi.iki.elonen.NanoWSD.WebSocket;
+import fi.iki.elonen.NanoWSD.WebSocketFrame;
+import fi.iki.elonen.NanoWSD.WebSocketFrame.CloseCode;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -49,13 +49,15 @@ public final class HubServer extends NanoWSD {
     }
 
     private Response text(Status status, String value) {
-        Response response = Response.newFixedLengthResponse(status, "text/plain; charset=utf-8", value);
+        Response response = NanoHTTPD.newFixedLengthResponse(status, "text/plain; charset=utf-8", value);
         response.addHeader("Cache-Control", "no-store");
         return response;
     }
 
     @Override
     public Response serve(IHTTPSession session) {
+        // NanoWSD 2.3.1 handles its own upgrade handshake in super.serve().
+        if (isWebsocketRequested(session)) return super.serve(session);
         if (session.getMethod() != NanoHTTPD.Method.GET &&
                 session.getMethod() != NanoHTTPD.Method.HEAD) {
             return text(Status.METHOD_NOT_ALLOWED, "Only GET");
@@ -71,7 +73,7 @@ public final class HubServer extends NanoWSD {
                     health.put("players", store.players(activePlayers.keySet()).length());
                     health.put("apkReady", false);
                 }
-                Response response = Response.newFixedLengthResponse(Status.OK, "application/json; charset=utf-8",
+                Response response = NanoHTTPD.newFixedLengthResponse(Status.OK, "application/json; charset=utf-8",
                         health.toString());
                 response.addHeader("Cache-Control", "no-store");
                 return response;
@@ -102,7 +104,7 @@ public final class HubServer extends NanoWSD {
         String assetName = "bell.mp3".equals(file) ? "bell.mp3" : file;
         try {
             InputStream input = assets.open(assetName);
-            Response response = Response.newFixedLengthResponse(Status.OK, mime, input, input.available());
+            Response response = NanoHTTPD.newFixedLengthResponse(Status.OK, mime, input, input.available());
             response.addHeader("Cache-Control", "no-store");
             response.addHeader("X-Content-Type-Options", "nosniff");
             response.addHeader("Referrer-Policy", "no-referrer");
