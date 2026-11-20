@@ -57,6 +57,9 @@ public final class HubActivity extends Activity {
     private LinearLayout root;
     private TextView status;
     private TextView addresses;
+    private LinearLayout addressOptions;
+    private String addressSignature = "";
+    private String selectedIp = "";
     private ImageView qr;
     private Button openAdmin;
     private String lastDisplayedUrl = "";
@@ -166,6 +169,9 @@ public final class HubActivity extends Activity {
         addresses.setTextIsSelectable(true);
         addresses.setBackground(background(PANEL));
         content.addView(addresses);
+        addressOptions = new LinearLayout(this);
+        addressOptions.setOrientation(LinearLayout.VERTICAL);
+        content.addView(addressOptions);
         button("🔄 تحديث عناوين الشبكة", BLUE, content, this::refresh);
 
         qr = new ImageView(this);
@@ -208,10 +214,10 @@ public final class HubActivity extends Activity {
         Address(String name, String ip) { this.name = name; this.ip = ip; }
         int rank() {
             String n = name.toLowerCase(java.util.Locale.ROOT);
-            if (n.startsWith("wlan") || n.startsWith("wifi") || n.startsWith("ap") ||
-                    n.startsWith("swlan")) return 0;
-            if (n.startsWith("eth")) return 1;
-            return 2;
+            if (n.startsWith("ap") || n.startsWith("swlan")) return 0; // hotspot
+            if (n.startsWith("wlan") || n.startsWith("wifi")) return 1;
+            if (n.startsWith("eth")) return 2;
+            return 3;
         }
     }
 
@@ -261,6 +267,9 @@ public final class HubActivity extends Activity {
         if (addrs.isEmpty()) {
             addresses.setText("مش ظاهر IP للشبكة. افتح الهوتسبوت من الإعدادات أو وصّل Wi-Fi، وبعدين اضغط تحديث.");
             lastDisplayedUrl = "";
+            selectedIp = "";
+            addressSignature = "";
+            addressOptions.removeAllViews();
             qr.setImageDrawable(null);
             return;
         }
@@ -270,7 +279,24 @@ public final class HubActivity extends Activity {
                     .append(" (").append(address.name).append(")\n");
         }
         addresses.setText(text.toString().trim());
-        String newUrl = "http://" + addrs.get(0).ip + ":3000/play";
+        if (addrs.stream().noneMatch(address -> address.ip.equals(selectedIp))) {
+            selectedIp = addrs.get(0).ip;
+        }
+        StringBuilder signature = new StringBuilder();
+        for (Address address : addrs) signature.append(address.name).append(":").append(address.ip).append(";");
+        if (!signature.toString().equals(addressSignature)) {
+            addressSignature = signature.toString();
+            addressOptions.removeAllViews();
+            for (Address address : addrs) {
+                button("📲 QR / الرابط: " + address.ip + " (" + address.name + ")",
+                        BLUE, addressOptions, () -> {
+                            selectedIp = address.ip;
+                            lastDisplayedUrl = "";
+                            refresh();
+                        });
+            }
+        }
+        String newUrl = "http://" + selectedIp + ":3000/play";
         if (!newUrl.equals(lastDisplayedUrl)) {
             lastDisplayedUrl = newUrl;
             try { qr.setImageBitmap(qrBitmap(newUrl)); }
