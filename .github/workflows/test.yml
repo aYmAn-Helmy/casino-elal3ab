@@ -83,10 +83,15 @@ jobs:
           path: .
       - name: Check APK assets
         run: |
-          test -s android/hub/build/outputs/apk/debug/hub-debug.apk
-          unzip -Z1 android/hub/build/outputs/apk/debug/hub-debug.apk | grep -q 'assets/text_only_1000.json'
-          unzip -Z1 android/hub/build/outputs/apk/debug/hub-debug.apk | grep -q 'assets/admin.html'
-          unzip -Z1 android/hub/build/outputs/apk/debug/hub-debug.apk | grep -q 'assets/play.html'
+          APK=android/hub/build/outputs/apk/debug/hub-debug.apk
+          test -s "$APK"
+          unzip -Z1 "$APK" | grep '^assets/' | head -40
+          for path in assets/text_only_1000.json assets/admin.html assets/play.html; do
+            if ! unzip -Z1 "$APK" | grep -Fx "$path"; then
+              echo "Missing $path from hub APK" >&2
+              exit 1
+            fi
+          done
       - uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
