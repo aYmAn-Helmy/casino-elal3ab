@@ -279,9 +279,11 @@ public final class HubActivity extends Activity {
                     .append(" (").append(address.name).append(")\n");
         }
         addresses.setText(text.toString().trim());
-        if (addrs.stream().noneMatch(address -> address.ip.equals(selectedIp))) {
-            selectedIp = addrs.get(0).ip;
+        boolean stillAvailable = false;
+        for (Address address : addrs) {
+            if (address.ip.equals(selectedIp)) { stillAvailable = true; break; }
         }
+        if (!stillAvailable) selectedIp = addrs.get(0).ip;
         StringBuilder signature = new StringBuilder();
         for (Address address : addrs) signature.append(address.name).append(":").append(address.ip).append(";");
         if (!signature.toString().equals(addressSignature)) {
