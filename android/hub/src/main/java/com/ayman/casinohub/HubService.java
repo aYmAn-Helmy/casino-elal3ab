@@ -30,6 +30,7 @@ public final class HubService extends Service {
     private HubServer server;
     private PowerManager.WakeLock wakeLock;
     private volatile boolean stopping;
+    private volatile boolean starting;
 
     @Override public void onCreate() {
         super.onCreate();
@@ -65,13 +66,16 @@ public final class HubService extends Service {
             startForeground(NOTIFICATION_ID, notification());
         }
         synchronized (this) {
-            if (server != null || running) return START_STICKY;
+            if (server != null || running || starting) return START_STICKY;
+            starting = true;
             lastError = "";
             new Thread(() -> {
                 try {
                     String pin = HubActivity.getOrMakeHostPin(getApplicationContext());
                     HubServer candidate = new HubServer(getApplicationContext(), pin);
-                    candidate.start(5000, false);
+                    // Browser WebSockets can stay idle between quiz rounds for hours.
+                    // A short socket read timeout would disconnect them repeatedly.
+                    candidate.start(0, false);
                     synchronized (HubService.this) {
                         if (stopping) {
                             candidate.shutdown();
@@ -84,12 +88,14 @@ public final class HubService extends Service {
                         wakeLock.setReferenceCounted(false);
                         wakeLock.acquire();
                         running = true;
+                        starting = false;
                     }
                     Log.i(TAG, "Phone LAN hub active on port 3000");
                 } catch (Exception e) {
                     Log.e(TAG, "Hub startup failed", e);
                     lastError = e.getMessage() == null ? "تعذر تشغيل السيرفر" : e.getMessage();
                     running = false;
+                    starting = false;
                     stopSelf();
                 }
             }, "casino-hub-server").start();
@@ -99,6 +105,7 @@ public final class HubService extends Service {
 
     @Override public void onDestroy() {
         stopping = true;
+        starting = false;
         synchronized (this) {
             if (server != null) {
                 server.shutdown();
