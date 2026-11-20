@@ -422,7 +422,7 @@ public final class HubServer extends NanoWSD {
         @Override protected void onMessage(WebSocketFrame frame) {
             if (frame.getOpCode() != WebSocketFrame.OpCode.Text) return;
             try { onClientMessage(this, frame.getTextPayload()); }
-            catch (Exception e) { send(this, "error", error("صيغة رسالة غير صحيحة")); }
+            catch (Exception e) { HubServer.send(this, "error", error("صيغة رسالة غير صحيحة")); }
         }
         @Override protected void onPong(WebSocketFrame frame) { }
         @Override protected void onClose(CloseCode code, String reason, boolean initiatedByRemote) {
